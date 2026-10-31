@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- A biblioteca de sons é dividida com o Maverick Truck (FonteDeSons): só apps assinados com a mesma chave entram.
+         O Maverick declara a mesma permissão, então tanto faz qual dos dois é instalado primeiro -->
+    <permission
+        android:name="com.implacavel.alarme.permission.SONS"
+        android:protectionLevel="signature" />
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Alarme no minuto exato. USE_EXACT_ALARM é concedida na instalação (Android 13+);
          a Play Store só aceita em apps de despertador, mas aqui o APK é seu. -->
@@ -158,5 +164,11 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
+
+        <provider
+            android:name=".FonteDeSons"
+            android:authorities="com.implacavel.alarme.sons"
+            android:exported="true"
+            android:permission="com.implacavel.alarme.permission.SONS" />
     </application>
 </manifest>

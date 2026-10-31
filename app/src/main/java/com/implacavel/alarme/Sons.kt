@@ -3,7 +3,8 @@
 // dele. Cada alarme escolhe o seu ([Alarme.som], o nome do arquivo na biblioteca); sem escolha, vale o padrão
 // ([Sons.padrao]); sem padrão, o toque de alarme do celular (Sirene). A pasta é protegida (como os alarmes): dá pra
 // ler antes do primeiro desbloqueio, então depois de um reinício a música toca, e não o toque do sistema.
-// O app não traz música nenhuma: a biblioteca começa vazia.
+// O app não traz música nenhuma: a biblioteca começa vazia. O Maverick Truck usa a mesma biblioteca (FonteDeSons): toca
+// os sons na tela de bloqueio dele e também adiciona e apaga (o dono, 10-31).
 //
 // Pelo cabo, no app de depuração (veja o README):
 //   adb push som.mp3 /data/local/tmp/ && adb shell run-as com.implacavel.alarme cp /data/local/tmp/som.mp3 /data/user_de/0/com.implacavel.alarme/app_sons/
@@ -37,8 +38,10 @@ object Sons {
     /** O nome do som que toca nos alarmes sem som próprio; null = o toque de alarme do celular. */
     val padrao: StateFlow<String?> = _padrao.asStateFlow()
 
-    /** Chamado uma vez em [App.onCreate]. */
+    /** Chamado em [App.onCreate] e pela [FonteDeSons] (que pode ser chamada antes): só a primeira vez faz algo. */
+    @Synchronized
     fun carregar(ctx: Context) {
+        if (::pasta.isInitialized) return
         pasta = ctx.createDeviceProtectedStorageContext().getDir("sons", Context.MODE_PRIVATE)
         prefs = ctx.prefsProtegidas("sons")
         _padrao.value = prefs.getString("padrao", null)
@@ -47,6 +50,7 @@ object Sons {
     }
 
     /** Relê a pasta (um som pode ter chegado pelo cabo); um padrão que sumiu deixa de ser padrão. */
+    @Synchronized
     fun reler() {
         _lista.value = (pasta.listFiles() ?: emptyArray())
             .filter { it.isFile && it.length() > 0 }
@@ -72,7 +76,37 @@ object Sons {
         return Som(nome, destino)
     }
 
+    /**
+     * Um som que chegou de fora (o Maverick Truck, pela [FonteDeSons]), já gravado em [temporario] na mesma partição:
+     * vira um som da biblioteca com o [nomeOriginal] (seguro, sem repetir). Vazio, é jogado fora.
+     */
+    @Synchronized
+    fun receber(temporario: File, nomeOriginal: String?): Som? {
+        if (temporario.length() <= 0) {
+            temporario.delete()
+            return null
+        }
+        val nome = nomeLivre(nomeSeguro(nomeOriginal), _lista.value.map { it.nome })
+        val destino = File(pasta, nome)
+        if (!temporario.renameTo(destino)) {
+            temporario.delete()
+            Log.w(TAG, "Sons: não deu pra guardar o som que chegou: $nome")
+            return null
+        }
+        Log.i(TAG, "Sons: chegou do Maverick: $nome (${destino.length() / 1024} KB)")
+        reler()
+        return Som(nome, destino)
+    }
+
+    /** Onde um som de fora é gravado antes de entrar na biblioteca (mesma partição, pra só renomear no fim). */
+    fun temporario(ctx: Context): File =
+        File.createTempFile("chegando", ".tmp", ctx.createDeviceProtectedStorageContext().cacheDir)
+
+    /** O som [nome], se está na biblioteca (só nomes da lista: nada de caminho vindo de fora). */
+    fun achar(nome: String): Som? = existente(nome)
+
     /** Apaga o som [nome] da biblioteca: os alarmes que o usavam passam a tocar o padrão. */
+    @Synchronized
     fun remover(nome: String) {
         File(pasta, nome).delete()
         Log.i(TAG, "Sons: removido da biblioteca: $nome")
