@@ -44,6 +44,8 @@ object Sons {
         if (::pasta.isInitialized) return
         pasta = ctx.createDeviceProtectedStorageContext().getDir("sons", Context.MODE_PRIVATE)
         prefs = ctx.prefsProtegidas("sons")
+        // Sobras de um envio do Maverick que o app não terminou de receber (morreu no meio)
+        ctx.createDeviceProtectedStorageContext().cacheDir.listFiles { f -> f.name.startsWith("chegando") }?.forEach { it.delete() }
         _padrao.value = prefs.getString("padrao", null)
         reler()
         migrarMusicaAntiga(ctx)
@@ -82,7 +84,7 @@ object Sons {
      */
     @Synchronized
     fun receber(temporario: File, nomeOriginal: String?): Som? {
-        if (temporario.length() <= 0) {
+        if (temporario.length() <= 0 || temporario.length() > TAMANHO_MAXIMO) {
             temporario.delete()
             return null
         }
@@ -97,6 +99,9 @@ object Sons {
         reler()
         return Som(nome, destino)
     }
+
+    /** O maior som que entra vindo de fora (um arquivo enorme por engano não enche a memória do alarme). */
+    private const val TAMANHO_MAXIMO = 100L shl 20
 
     /** Onde um som de fora é gravado antes de entrar na biblioteca (mesma partição, pra só renomear no fim). */
     fun temporario(ctx: Context): File =

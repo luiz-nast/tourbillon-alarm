@@ -4,7 +4,9 @@
 //   content://com.implacavel.alarme.sons            lista (colunas nome, tamanho)
 //   content://com.implacavel.alarme.sons/som/NOME   abrir pra ler ("r") e apagar
 //   content://com.implacavel.alarme.sons/novo/NOME  abrir pra gravar ("w"): ao fechar, vira um som da biblioteca
-// Só nomes que já estão na lista são lidos ou apagados: nada de caminho vindo de fora.
+// Só nomes que já estão na lista são lidos ou apagados: nada de caminho vindo de fora. Um som em uso (o padrão, o de um
+// alarme ou o que está tocando agora) não é apagado daqui: o alarme da manhã nunca perde a música por um clique no outro
+// app (revisão, 10-31). Um envio que falhou no meio não entra (o Maverick fecha com erro).
 package com.implacavel.alarme
 
 import android.content.ContentProvider
@@ -65,7 +67,17 @@ class FonteDeSons : ContentProvider() {
     override fun delete(uri: Uri, selection: String?, args: Array<out String>?): Int {
         pronta()
         val (tipo, nome) = partes(uri) ?: return 0
-        if (tipo != "som" || Sons.achar(nome) == null) return 0
+        val som = Sons.achar(nome)
+        if (tipo != "som" || som == null) return 0
+        // Na dúvida (o app ainda subindo), não apaga
+        val emUso = runCatching {
+            nome == Sons.padrao.value || Alarmes.lista.value.any { it.som == nome } ||
+                Ajustes.emAndamento?.musica == Uri.fromFile(som.arquivo).toString()
+        }.getOrDefault(true)
+        if (emUso) {
+            Log.i(TAG, "Sons: o Maverick quis apagar $nome, mas está em uso num alarme")
+            return 0
+        }
         Sons.remover(nome)
         return 1
     }
