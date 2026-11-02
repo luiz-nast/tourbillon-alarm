@@ -157,7 +157,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         private var usosDaAvulsa = 0
         private const val AVULSA_MAX_USOS = 12
 
-        /** Fecha a conversa do Chiron (só na thread do modelo). A da manhã nunca divide o modelo com ela. */
+        /** Fecha a conversa do Chiron (só na thread do modelo). A da manhã nunca divide o modelo com ela ([conversaPronta], [anotar]). */
         private fun fecharAvulsa() {
             avulsa?.let { runCatching { it.close() } }
             avulsa = null
@@ -205,7 +205,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         internal fun textoDe(resposta: Message): String = resposta.contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
 
         /** A conversa da manhã, com a [instrucao] como instrução do sistema (o modelo já lê a instrução ao criar). Só na thread do modelo. */
-        internal fun conversaDaManha(engine: Engine, instrucao: String): Conversation = engine.also { fecharAvulsa() }.createConversation(
+        internal fun conversaDaManha(engine: Engine, instrucao: String): Conversation = engine.createConversation(
             ConversationConfig(
                 systemInstruction = Contents.of(instrucao),
                 samplerConfig = AMOSTRAGEM,
@@ -248,7 +248,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
          * [pedidoDeAnotacoes]; volta limpo ([limparAnotacoes]). Só a conversa de hoje: nada se acumula de um dia pro outro.
          */
         internal fun anotarCom(engine: Engine, transcricao: List<Turno>, hoje: LocalDate): String =
-            engine.also { fecharAvulsa() }.createConversation(
+            engine.createConversation(
                 ConversationConfig(
                     systemInstruction = Contents.of(INSTRUCAO_DAS_ANOTACOES),
                     samplerConfig = AMOSTRAGEM_DAS_ANOTACOES,
@@ -321,6 +321,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
             val inicio = SystemClock.elapsedRealtime()
             conversa?.let { runCatching { it.close() } }
             conversa = null
+            fecharAvulsa()
             val novas = runCatching { anotarCom(carregado(app), transcricao, LocalDate.now()) }
                 .onFailure { Log.w(TAG, "IA do celular: não anotou (${it.javaClass.simpleName}: ${it.message?.take(120)})") }
                 .getOrNull()
@@ -359,7 +360,10 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
     }
 
     /** A conversa com a instrução do treinador, criada no primeiro pedido (já lendo a instrução). Só na thread do modelo. */
-    private fun conversaPronta(): Conversation = conversa ?: conversaDaManha(carregado(app), instrucao).also { conversa = it }
+    private fun conversaPronta(): Conversation = conversa ?: run {
+        fecharAvulsa() // a do Chiron nunca divide o modelo com a da manhã
+        conversaDaManha(carregado(app), instrucao).also { conversa = it }
+    }
 
     private fun entregar(numero: Int, resposta: String?, demora: Long, aoResponder: (String?) -> Unit) {
         if (numero != pedidos || desligado) return // cancelado, ou já tem um pedido mais novo

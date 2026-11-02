@@ -23,37 +23,50 @@ class ServicoDeIa : Service() {
         const val PERGUNTAR = 1 // Chiron → aqui: Bundle("instrucao", "prompt"), replyTo
         const val RESPOSTA = 2 // aqui → Chiron: Bundle("texto"); vazio = não deu
         const val AQUECER = 3 // Chiron → aqui: Bundle("instrucao"); carrega o modelo e lê a instrução, sem resposta
+        const val OCUPADO = 4 // Chiron → aqui: "está com um alarme?" (antes de tocar um lembrete); volta RESPOSTA com Bundle("ocupado")
         private const val INSTRUCAO_MAX = 8_000 // letras: uma instrução maior que isso não é do Chiron
         private const val PERGUNTA_MAX = 1_000
 
         /** Sem pergunta nenhuma por este tempo (e sem alarme), o modelo sai da memória. */
         private const val PARADO_MS = 3 * 60_000L
+
+        private val principal = Handler(Looper.getMainLooper())
+        private var pedidos = 0 // a cada pergunta: só a última agenda a saída do modelo (vale entre um serviço e outro)
+
+        /** Um relógio só pra saída do modelo, de todos os serviços: cada pergunta nova o empurra pra frente. */
+        private val soltar = Runnable {
+            // Só sem alarme: a conversa da manhã usa o mesmo modelo, e quem solta no fim dela é o AlarmeService
+            if (!alarmeNaFrente()) {
+                Log.i(TAG, "IA do celular: o Chiron parou de perguntar, modelo sai da memória")
+                ModeloLocal.liberar()
+            }
+        }
+
+        private fun soltarDaquiAPouco() {
+            principal.removeCallbacks(soltar)
+            principal.postDelayed(soltar, PARADO_MS)
+        }
+
+        /** Um alarme está tocando, em andamento ou o teste da IA está com o modelo: o alarme passa na frente. */
+        fun alarmeNaFrente(): Boolean =
+            AlarmeService.tocando.value != null || Ajustes.emAndamento != null || ModeloLocal.emTeste
     }
 
     private val principal = Handler(Looper.getMainLooper())
-    private var pedidos = 0 // a cada pergunta: só a última agenda a saída do modelo
-
-    private val soltar = Runnable {
-        // Só sem alarme: a conversa da manhã usa o mesmo modelo, e quem solta no fim dela é o AlarmeService
-        if (!alarmeNaFrente()) {
-            Log.i(TAG, "IA do celular: o Chiron parou de perguntar, modelo sai da memória")
-            ModeloLocal.liberar()
-        }
-    }
 
     private val mensageiro = Messenger(Handler(Looper.getMainLooper()) { msg ->
         when (msg.what) {
             PERGUNTAR -> atender(msg)
             AQUECER -> aquecer(msg)
+            OCUPADO -> msg.replyTo?.let { quem ->
+                val r = Message.obtain(null, RESPOSTA).apply { data = Bundle().apply { putBoolean("ocupado", alarmeNaFrente()) } }
+                runCatching { quem.send(r) }
+            }
         }
         true
     })
 
     override fun onBind(intent: Intent?): IBinder = mensageiro.binder
-
-    /** Um alarme está tocando, em andamento ou o teste da IA está com o modelo: o alarme passa na frente. */
-    private fun alarmeNaFrente(): Boolean =
-        AlarmeService.tocando.value != null || Ajustes.emAndamento != null || ModeloLocal.emTeste
 
     /** O Chiron abriu: o modelo carrega e lê a instrução dele já, pra a primeira pergunta não levar 20 s. */
     private fun aquecer(msg: Message) {
@@ -61,7 +74,7 @@ class ServicoDeIa : Service() {
         if (instrucao.isBlank() || alarmeNaFrente() || !ModeloLocal.disponivel(this)) return
         val numero = ++pedidos
         principal.removeCallbacks(soltar)
-        ModeloLocal.perguntaAvulsa(this, instrucao, null) { if (numero == pedidos) principal.postDelayed(soltar, PARADO_MS) }
+        ModeloLocal.perguntaAvulsa(this, instrucao, null) { if (numero == pedidos) soltarDaquiAPouco() }
     }
 
     private fun atender(msg: Message) {
@@ -85,14 +98,13 @@ class ServicoDeIa : Service() {
         principal.removeCallbacks(soltar)
         ModeloLocal.perguntaAvulsa(this, instrucao, pergunta) { texto ->
             devolver(texto)
-            if (numero == pedidos) principal.postDelayed(soltar, PARADO_MS)
+            if (numero == pedidos) soltarDaquiAPouco()
         }
     }
 
     override fun onDestroy() {
         // O Chiron desligou: o modelo sai daqui a pouco, se ninguém mais o usar (o soltar confere o alarme)
-        principal.removeCallbacks(soltar)
-        if (!alarmeNaFrente()) principal.postDelayed({ if (!alarmeNaFrente()) ModeloLocal.liberar() }, PARADO_MS)
+        soltarDaquiAPouco()
         super.onDestroy()
     }
 }
