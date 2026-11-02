@@ -7,6 +7,10 @@
     <permission
         android:name="com.implacavel.alarme.permission.SONS"
         android:protectionLevel="signature" />
+    <!-- O Gemma é dividido com o Chiron Routine (ServicoDeIa): também só pra apps com a mesma chave -->
+    <permission
+        android:name="com.implacavel.alarme.permission.IA"
+        android:protectionLevel="signature" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Alarme no minuto exato. USE_EXACT_ALARM é concedida na instalação (Android 13+);
@@ -164,6 +168,15 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".ServicoDeIa"
+            android:exported="true"
+            android:permission="com.implacavel.alarme.permission.IA">
+            <intent-filter>
+                <action android:name="com.implacavel.alarme.action.IA" />
+            </intent-filter>
+        </service>
 
         <provider
             android:name=".FonteDeSons"

@@ -17,18 +17,18 @@ import kotlinx.coroutines.delay
 import java.time.ZonedDateTime
 
 /** Cores da tela do alarme, que não segue o tema do sistema. O vermelho é o mesmo de R.color.vermelho_alarme. */
-val VermelhoAlarme = Color(0xFFB71C1C)
-val VinhoAlarme = Color(0xFF3B0000)
+val VermelhoAlarme = Color(0xFF8F2E1D)
+val VinhoAlarme = Color(0xFF2A0D08)
 
 /** A etapa da caminhada (as ondas do prazo pra sair e a rua) é azul, não vermelha: pedido do dono (10-17). */
 val AzulCaminhada = Color(0xFF0D47A1)
 val FundoCaminhada = listOf(Color(0xFFF3F9FF), Color(0xFFBBDEFB))
 
 private val Claro = lightColorScheme(
-    primary = Color(0xFFB3261E),
+    primary = Color(0xFF8F2E1D),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFFFDAD6),
-    onPrimaryContainer = Color(0xFF410002),
+    primaryContainer = Color(0xFFFFDAD3),
+    onPrimaryContainer = Color(0xFF3A0E06),
     secondary = Color(0xFF775652),
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFFFDAD6),
@@ -48,40 +48,41 @@ private val Claro = lightColorScheme(
 )
 
 /**
- * A noite do Tourbillon Alarm (a tela principal e o editor, 10-17, o dono pediu componentes escuros): tinta roxa quase
- * preta de fundo, brasa (laranja-vermelho) no que acende e chama (botões, interruptor ligado, o tipo do alarme), lilás
- * nos destaques secundários e menta no que está certo. Nunca segue o sistema: é sempre esta.
+ * A noite do Tourbillon Alarm (a tela principal e o editor, 10-17, o dono pediu componentes escuros), agora na paleta
+ * única dos apps do dono (11-02): fundo quase preto azulado, cartões em cinza-azulado, ferrugem no que acende e chama
+ * (botões, interruptor ligado, o tipo do alarme; ferrugem clara nos textos e traços sobre o escuro), cinzas no resto e
+ * vermelho claro no erro. Nunca segue o sistema: é sempre esta.
  */
 private val Noite = darkColorScheme(
-    primary = Color(0xFFFF6A4D),
-    onPrimary = Color(0xFF2A0600),
-    primaryContainer = Color(0xFF5C1A0B),
-    onPrimaryContainer = Color(0xFFFFD9D0),
-    secondary = Color(0xFFC8B6FF),
-    onSecondary = Color(0xFF241347),
-    secondaryContainer = Color(0xFF3B2A66),
-    onSecondaryContainer = Color(0xFFE6DDFF),
-    tertiary = Color(0xFF6EE7D2),
-    onTertiary = Color(0xFF00382F),
-    tertiaryContainer = Color(0xFF0F4F45),
-    onTertiaryContainer = Color(0xFFBFF5EA),
-    error = Color(0xFFFF8A80),
-    onError = Color(0xFF3A0000),
-    errorContainer = Color(0xFF5C1212),
-    onErrorContainer = Color(0xFFFFDAD6),
-    background = Color(0xFF0D0A14),
-    onBackground = Color(0xFFECE6F5),
-    surface = Color(0xFF0D0A14),
-    onSurface = Color(0xFFECE6F5),
-    surfaceVariant = Color(0xFF2B2140),
-    onSurfaceVariant = Color(0xFFB7ACC9),
-    outline = Color(0xFF7E7392),
-    outlineVariant = Color(0xFF3A2F4D),
-    surfaceContainerLowest = Color(0xFF080610),
-    surfaceContainerLow = Color(0xFF150F1F),
-    surfaceContainer = Color(0xFF1B1428),
-    surfaceContainerHigh = Color(0xFF231A33),
-    surfaceContainerHighest = Color(0xFF2B2140),
+    primary = Color(0xFFC4472E),
+    onPrimary = Color(0xFFECEEF0),
+    primaryContainer = Color(0xFF8F2E1D),
+    onPrimaryContainer = Color(0xFFECEEF0),
+    secondary = Color(0xFF949AA0),
+    onSecondary = Color(0xFF0B0E12),
+    secondaryContainer = Color(0xFF27313A),
+    onSecondaryContainer = Color(0xFFECEEF0),
+    tertiary = Color(0xFFB8BEC4),
+    onTertiary = Color(0xFF0B0E12),
+    tertiaryContainer = Color(0xFF4E5158),
+    onTertiaryContainer = Color(0xFFECEEF0),
+    error = Color(0xFFE0654A),
+    onError = Color(0xFF0B0E12),
+    errorContainer = Color(0xFF5A1F14),
+    onErrorContainer = Color(0xFFFFDAD3),
+    background = Color(0xFF0B0E12),
+    onBackground = Color(0xFFECEEF0),
+    surface = Color(0xFF0B0E12),
+    onSurface = Color(0xFFECEEF0),
+    surfaceVariant = Color(0xFF27313A),
+    onSurfaceVariant = Color(0xFF949AA0),
+    outline = Color(0xFF7B848C),
+    outlineVariant = Color(0xFF4E5158),
+    surfaceContainerLowest = Color(0xFF070A0D),
+    surfaceContainerLow = Color(0xFF141A20),
+    surfaceContainer = Color(0xFF1B232A),
+    surfaceContainerHigh = Color(0xFF222B33),
+    surfaceContainerHighest = Color(0xFF27313A),
 )
 
 /**

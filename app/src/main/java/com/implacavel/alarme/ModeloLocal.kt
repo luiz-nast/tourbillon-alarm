@@ -53,6 +53,12 @@ const val RESPOSTA_MAX_TOKENS = 72 // 10-28: +8 pro juízo ("[VAGUE]") e a respo
 /** A amostragem do Gemma 4 (a recomendada pelo Google, com a temperatura um pouco abaixo de 1: varia as falas sem perder o fio). */
 private val AMOSTRAGEM = SamplerConfig(topK = 64, topP = 0.95, temperature = 0.9)
 
+/** As perguntas do Chiron (escolher uma habilidade e responder em JSON): temperatura bem baixa, sem invenção. */
+private val AMOSTRAGEM_AVULSA = SamplerConfig(topK = 20, topP = 0.9, temperature = 0.2)
+
+/** Tamanho máximo da resposta de uma pergunta do Chiron (uma linha JSON). */
+private const val AVULSA_MAX_TOKENS = 120
+
 /** Quem anota é mais certinho: temperatura baixa. */
 private val AMOSTRAGEM_DAS_ANOTACOES = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.3)
 
@@ -116,6 +122,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         /** Tira o modelo da memória, depois do que estiver em curso na thread dele. */
         fun liberar() {
             trabalho.execute {
+                fecharAvulsa()
                 engine?.let {
                     Log.i(TAG, "IA do celular: modelo fora da memória")
                     runCatching { it.close() }
@@ -142,11 +149,63 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
             return novo
         }
 
+        // A conversa das perguntas do Chiron, guardada entre uma pergunta e outra (só na thread do modelo): ler a instrução
+        // dele custa uns 12 s no S24 FE, então ela é lida uma vez e reaproveitada enquanto a instrução for a mesma (até
+        // [AVULSA_MAX_USOS] perguntas, pra a memória da conversa não encher). As perguntas de antes ficam como exemplos.
+        private var avulsa: Conversation? = null
+        private var instrucaoDaAvulsa: String? = null
+        private var usosDaAvulsa = 0
+        private const val AVULSA_MAX_USOS = 12
+
+        /** Fecha a conversa do Chiron (só na thread do modelo). A da manhã nunca divide o modelo com ela. */
+        private fun fecharAvulsa() {
+            avulsa?.let { runCatching { it.close() } }
+            avulsa = null
+            instrucaoDaAvulsa = null
+            usosDaAvulsa = 0
+        }
+
+        /**
+         * Uma pergunta avulsa de outro app (o Chiron, pelo [ServicoDeIa]), com a [instrucao] dele e a [pergunta]. Na
+         * thread do modelo, depois do que estiver na fila (nunca junto com a conversa da manhã, que fecha esta antes de
+         * abrir: [conversaDaManha]); a resposta chega na principal (null se não deu). Quem chama confere antes se há alarme.
+         */
+        fun perguntaAvulsa(ctx: Context, instrucao: String, pergunta: String?, aoResponder: (String?) -> Unit) {
+            val app = ctx.applicationContext
+            trabalho.execute {
+                val inicio = SystemClock.elapsedRealtime()
+                val texto = runCatching {
+                    if (avulsa == null || instrucao != instrucaoDaAvulsa || usosDaAvulsa >= AVULSA_MAX_USOS) {
+                        fecharAvulsa()
+                        avulsa = carregado(app).createConversation(
+                            ConversationConfig(
+                                systemInstruction = Contents.of(instrucao),
+                                samplerConfig = AMOSTRAGEM_AVULSA,
+                                prefillPrefaceOnInit = true,
+                                maxOutputToken = AVULSA_MAX_TOKENS,
+                                thinkingConfig = ThinkingConfig(enableThinking = false),
+                            ),
+                        )
+                        instrucaoDaAvulsa = instrucao
+                    }
+                    // Sem pergunta: só aquecer (o Chiron abriu; a primeira pergunta de verdade já sai rápida)
+                    if (pergunta == null) return@runCatching null
+                    usosDaAvulsa++
+                    textoDe(avulsa!!.sendMessage(pergunta))
+                }.onFailure {
+                    fecharAvulsa() // uma conversa que falhou não é reaproveitada
+                    Log.w(TAG, "IA do celular: pergunta de fora sem resposta (${it.javaClass.simpleName}: ${it.message?.take(120)})")
+                }.getOrNull()
+                Log.i(TAG, "IA do celular: ${if (pergunta == null) "aquecida pro Chiron" else "pergunta de fora respondida"} em ${SystemClock.elapsedRealtime() - inicio} ms (uso $usosDaAvulsa)")
+                handler.post { aoResponder(texto) }
+            }
+        }
+
         /** O texto de uma resposta do modelo: as partes de texto juntas. */
         internal fun textoDe(resposta: Message): String = resposta.contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
 
         /** A conversa da manhã, com a [instrucao] como instrução do sistema (o modelo já lê a instrução ao criar). Só na thread do modelo. */
-        internal fun conversaDaManha(engine: Engine, instrucao: String): Conversation = engine.createConversation(
+        internal fun conversaDaManha(engine: Engine, instrucao: String): Conversation = engine.also { fecharAvulsa() }.createConversation(
             ConversationConfig(
                 systemInstruction = Contents.of(instrucao),
                 samplerConfig = AMOSTRAGEM,
@@ -189,7 +248,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
          * [pedidoDeAnotacoes]; volta limpo ([limparAnotacoes]). Só a conversa de hoje: nada se acumula de um dia pro outro.
          */
         internal fun anotarCom(engine: Engine, transcricao: List<Turno>, hoje: LocalDate): String =
-            engine.createConversation(
+            engine.also { fecharAvulsa() }.createConversation(
                 ConversationConfig(
                     systemInstruction = Contents.of(INSTRUCAO_DAS_ANOTACOES),
                     samplerConfig = AMOSTRAGEM_DAS_ANOTACOES,

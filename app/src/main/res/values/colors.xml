@@ -1,5 +1,5 @@
 <resources>
-    <color name="fundo_noite">#FF0D0A14</color>
-    <color name="fundo_alarme">#FF3B0000</color>
-    <color name="vermelho_alarme">#FFB71C1C</color>
+    <color name="fundo_noite">#FF0B0E12</color>
+    <color name="fundo_alarme">#FF2A0D08</color>
+    <color name="vermelho_alarme">#FF8F2E1D</color>
 </resources>
