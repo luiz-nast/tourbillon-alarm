@@ -20,6 +20,10 @@ class AlarmeReceiver : BroadcastReceiver() {
             Agendador.ACAO_RETOMAR -> {
                 val em = Ajustes.emAndamento ?: return // missão já cumprida: retomada velha
                 Log.i(TAG, "Retomada: alarme ${em.alarme.id} estava em andamento")
+                // Rearma antes de tocar: se o Android recusar o serviço em primeiro plano (a trava de tipo de FGS logo
+                // depois do boot), o [AlarmeService.renovar] não chega a rodar e nada mais empurraria a retomada; assim
+                // ela volta a cada ~10 s até o serviço firmar ou a missão acabar. emAndamento nulo já corta acima.
+                Agendador.agendarRetomada(ctx)
                 AlarmeService.tocar(ctx)
             }
         }
