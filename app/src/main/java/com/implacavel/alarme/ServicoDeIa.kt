@@ -52,8 +52,6 @@ class ServicoDeIa : Service() {
             AlarmeService.tocando.value != null || Ajustes.emAndamento != null || ModeloLocal.emTeste
     }
 
-    private val principal = Handler(Looper.getMainLooper())
-
     private val mensageiro = Messenger(Handler(Looper.getMainLooper()) { msg ->
         when (msg.what) {
             PERGUNTAR -> atender(msg)
