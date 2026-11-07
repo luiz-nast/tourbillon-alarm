@@ -216,8 +216,8 @@ fun pedidoDepoisDeInterrompida(antes: String, fala: String): String {
 }
 
 /**
- * O caminho da manhã, decidido logo depois do bom dia. Chuva, internet ou GPS não mudam nada: o "conversa +
- * caminhada" sempre termina andando na rua.
+ * O caminho da manhã, decidido logo depois do bom dia. Internet ou GPS não mudam o caminho escolhido; na chuva
+ * forte, a tela da caminhada oferece trocar a rua pela câmera (vira [ANTIGO] no meio, ver trocarParaCamera).
  */
 enum class CaminhoDaManha {
     /** O alarme tocando é o "câmera + frases" (outro alarme tomou o lugar do teste): a missão dele, de 40 min. */

@@ -138,6 +138,7 @@ private fun TelaAlarme(alarme: Alarme) {
     val tempos by AlarmeService.temposDoAlarme.collectAsStateWithLifecycle()
     val ondasMudas by AlarmeService.ondasMudas.collectAsStateWithLifecycle()
     val miniTarefa by AlarmeService.miniTarefa.collectAsStateWithLifecycle()
+    val chuvaForte by AlarmeService.chuvaForte.collectAsStateWithLifecycle()
     val metaCamera = metaOlhar(alarme, tempos)
     val comemorando by AlarmeService.comemorando.collectAsStateWithLifecycle()
     val comCaminhada by AlarmeService.comCaminhada.collectAsStateWithLifecycle()
@@ -235,6 +236,8 @@ private fun TelaAlarme(alarme: Alarme) {
                             onOndas = { AlarmeService.ondas(ctx, ligadas = it) },
                             miniTarefa = miniTarefa,
                             onMiniTarefa = { abrir -> AlarmeService.miniTarefa(ctx, abrir) },
+                            chuvaForte = chuvaForte,
+                            onTrocarCamera = { AlarmeService.trocarParaCamera(ctx) },
                         )
                     }
                 }

@@ -121,6 +121,7 @@ class AlarmeService : Service() {
         private const val ACAO_FASE = "fase"
         private const val ACAO_CANCELAR_TESTE = "cancelar_teste"
         private const val ACAO_MINI_TAREFA = "mini_tarefa"
+        private const val ACAO_TROCAR_CAMERA = "trocar_camera"
         private const val EXTRA_VOLUME = "volume"
         private const val EXTRA_ABERTA = "aberta"
         private const val EXTRA_LIGADAS = "ligadas"
@@ -277,6 +278,11 @@ class AlarmeService : Service() {
         /** As ondas do prazo pra sair estão mudas (o botão na tela da caminhada). Toda manhã começa ligada: o dono desliga se quiser. */
         val ondasMudas: StateFlow<Boolean> = _ondasMudas.asStateFlow()
 
+        private val _chuvaForte = MutableStateFlow(false)
+
+        /** A chuva agora é forte no lugar da pessoa (o [Clima], no STOP): a tela da caminhada oferece trocar pela câmera. Começa falsa (sem dado = segue na rua). */
+        val chuvaForte: StateFlow<Boolean> = _chuvaForte.asStateFlow()
+
         private val _camera = MutableStateFlow<CameraDaMissao?>(null)
 
         /** A câmera frontal da missão, do serviço (aberta depois do bom dia no "câmera + frases"; null fora disso): a tela liga o visor nela. */
@@ -349,6 +355,9 @@ class AlarmeService : Service() {
 
         /** O botão da mini tarefa na tela da caminhada ([abrir]) e o "voltar" da tela dela (fechar, sem o prazo a mais). */
         fun miniTarefa(ctx: Context, abrir: Boolean) { ctx.startService(comando(ctx, ACAO_MINI_TAREFA).putExtra(EXTRA_ABRIR, abrir)) }
+
+        /** O botão "switch to camera" da tela da caminhada (só na chuva forte): a caminhada na rua vira a missão da câmera. */
+        fun trocarParaCamera(ctx: Context) { ctx.startService(comando(ctx, ACAO_TROCAR_CAMERA)) }
 
         /** O botão "Cancel test" (depois da confirmação): o alarme de teste acaba agora, sem comemoração. Num alarme de verdade, nada. */
         fun cancelarTeste(ctx: Context) { ctx.startService(comando(ctx, ACAO_CANCELAR_TESTE)) }
@@ -631,6 +640,7 @@ class AlarmeService : Service() {
             acao == ACAO_DAR_TEMPO -> foraAte = SystemClock.elapsedRealtime() + TEMPO_FORA_MS
             acao == ACAO_ONDAS -> ondas(intent.getBooleanExtra(EXTRA_LIGADAS, true))
             acao == ACAO_MINI_TAREFA -> if (intent.getBooleanExtra(EXTRA_ABRIR, true)) abrirMiniTarefa() else voltarDaMiniTarefa()
+            acao == ACAO_TROCAR_CAMERA -> trocarParaCamera()
             // Os botões de fase e de cancelar só existem na tela de um alarme de teste; um comando atrasado não mexe num alarme de verdade
             acao == ACAO_FASE -> if (alarme.deTeste) intent.getStringExtra(EXTRA_FASE)?.let { nome -> FaseDoTeste.entries.firstOrNull { it.name == nome } }?.let(::irPraFase)
             acao == ACAO_CANCELAR_TESTE -> if (alarme.deTeste && !cumprido) {
@@ -655,6 +665,7 @@ class AlarmeService : Service() {
         pararEscuta()
         desligarSentidos()
         desligarCamera()
+        Clima.cancelar() // um callback atrasado do clima não seta o flag depois do fim
         pararOuvinteDaFrase()
         motor?.desligar()
         MotorDaConversa.liberar()
@@ -669,6 +680,7 @@ class AlarmeService : Service() {
         _miniTarefa.value = null
         _tocando.value = null
         _comCaminhada.value = false
+        _chuvaForte.value = false
         if (processador.isHeld) processador.release()
         // Um instante pras últimas linhas chegarem no arquivo
         gravadorDoLog?.let { p -> Handler(Looper.getMainLooper()).postDelayed({ p.destroy() }, 1_000) }
@@ -816,6 +828,8 @@ class AlarmeService : Service() {
         if (manhaNova()) {
             prepararManha()
             ligarSentidos() // o GPS acerta a mira durante a conversa
+            // A chuva de agora, 100% assíncrona (thread própria + callback no main): nunca trava o toque. Só o botão de trocar pela câmera depende dela; sem dado, segue a rua.
+            Clima.chuva(this) { _chuvaForte.value = ofereceCamera(it) }
         } else if (caminho == null) {
             caminho = CaminhoDaManha.ANTIGO
             soltarIa() // uma IA preparada durante a música não vai servir
@@ -2006,6 +2020,32 @@ class AlarmeService : Service() {
         }
     }
 
+    /**
+     * O botão "switch to camera" da chuva forte: derruba a caminhada na rua inteira e entra na missão da câmera, que
+     * também dispensa o alarme ([EtapaOlhar]: meta ou defeito). A câmera só anda com [manhaNova] falsa, e forçar
+     * [CaminhoDaManha.ANTIGO] é o que a torna falsa (1139) e herda a dispensa provada do "câmera + frases". Só de ida
+     * (não há voltar pra caminhada), e só com a câmera já liberada: sem permissão, a troca poderia prender, então nem
+     * oferece. Fora da caminhada (já trocou, ou nem está nela): nada. Idempotente contra comando repetido.
+     */
+    private fun trocarParaCamera() {
+        if (!_silenciado.value || _saudando.value || cumprido || _caminhada.value == null) return
+        if (!Poder.CAMERA.liberado(this)) return // sem câmera não há como dispensar nela: fica na caminhada (o botão nem aparece)
+        Log.i(TAG, "Chuva: troca a caminhada na rua pela câmera")
+        // Derruba a caminhada por inteiro: sem isso o ContadorDaCaminhada concluiria por baixo da câmera, e os bipes e as ondas de parado seguiriam
+        handler.removeCallbacks(vigiaDaCaminhada)
+        handler.removeCallbacks(fimDasOndas)
+        sirene.ondas(false)
+        desligarSentidos() // para o ContadorDaCaminhada, o GPS e a mini tarefa
+        _caminhada.value = null
+        _miniTarefa.value = null
+        _comCaminhada.value = false
+        caminho = CaminhoDaManha.ANTIGO // destrava a câmera (manhaNova fica falsa) e herda a dispensa do "câmera + frases"
+        zerarAnel()
+        adiarVigia()
+        comecarCamera()
+        salvarProgresso() // persiste a troca já: se o app morrer no pico de memória da câmera, a retomada volta na câmera, não na caminhada
+    }
+
     /** Sinal de vida do relógio da caminhada ([ContadorDaCaminhada]): guarda o tempo andado e a contagem pro bipe recomeça. */
     private fun andou(andadoMs: Long) {
         // Sinal atrasado, de quando a música voltou
@@ -2105,6 +2145,7 @@ class AlarmeService : Service() {
         miniTarefaRetirada = false
         _miniTarefa.value = null
         _ondasMudas.value = false
+        _chuvaForte.value = false
     }
 
     /**

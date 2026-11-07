@@ -375,6 +375,8 @@ fun EtapaCaminhada(
     onOndas: ((ligadas: Boolean) -> Unit)? = null,
     miniTarefa: MiniTarefa? = null,
     onMiniTarefa: ((abrir: Boolean) -> Unit)? = null,
+    chuvaForte: Boolean = false,
+    onTrocarCamera: (() -> Unit)? = null,
 ) {
     val ctx = LocalContext.current
     val activity = LocalActivity.current
@@ -425,6 +427,12 @@ fun EtapaCaminhada(
             }
         } else {
             BarraDoBipe(paradoMs)
+        }
+        // Chuva forte lá fora: oferece ficar em casa e fazer a tarefa da câmera. Só com a câmera já liberada, pra a troca nunca prender (sem permissão, segue a rua)
+        if (chuvaForte && onTrocarCamera != null && Poder.CAMERA.liberado(ctx)) {
+            Spacer(Modifier.height(12.dp))
+            BotaoGrande("☔ Switch to camera", onTrocarCamera, fundoClaro = true)
+            Text("Heavy rain outside. Prefer to stay in? Do the camera task instead.", color = AzulCaminhada, fontSize = 15.sp, textAlign = TextAlign.Center)
         }
         if (miniTarefa != null && onMiniTarefa != null) {
             Spacer(Modifier.height(12.dp))
