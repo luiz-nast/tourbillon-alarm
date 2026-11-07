@@ -125,7 +125,7 @@ private fun TelaPrincipal() {
             tocando?.let { alarme ->
                 Button(
                     onClick = { ctx.startActivity(Intent(ctx, AlarmeActivity::class.java)) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(56.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).height(56.dp),
                 ) { Text("⏰ ${alarme.nome} ringing · open") }
             }
             TabRow(selectedTabIndex = paginas.currentPage) {
@@ -138,7 +138,7 @@ private fun TelaPrincipal() {
                 }
             }
             HorizontalPager(paginas, Modifier.fillMaxSize()) { pagina ->
-                val margensDaLista = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = margens.calculateBottomPadding() + 96.dp)
+                val margensDaLista = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = margens.calculateBottomPadding() + 96.dp)
                 if (pagina == 0) {
                     LazyColumn(Modifier.fillMaxSize(), contentPadding = margensDaLista, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         item { Cabecalho(alarmes, agora) }

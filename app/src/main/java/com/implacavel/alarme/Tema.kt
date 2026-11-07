@@ -1,7 +1,10 @@
 // Compartilhado pelas telas: temas (Claro no alarme, Noite na tela principal), cores fixas da tela do alarme, o relógio agoraACada e lidoAoVoltar.
 package com.implacavel.alarme
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -12,6 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import kotlinx.coroutines.delay
 import java.time.ZonedDateTime
@@ -86,13 +92,38 @@ private val Noite = darkColorScheme(
 )
 
 /**
+ * Escala única dos apps do dono (Tourbillon, Chiron e Maverick, 11-07): mudar uma medida é mudar uma linha aqui.
+ * Título de tela 28, de diálogo 22, de cartão 18; corpo 16, secundário 14, legenda 12; rótulo de seção 13 em negrito.
+ */
+private val base = Typography()
+val Tipo = Typography(
+    headlineMedium = base.headlineMedium.copy(fontSize = 28.sp, fontWeight = FontWeight.Black),
+    headlineSmall = base.titleLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Black), // título do AlertDialog
+    titleLarge = base.titleLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Black),
+    titleMedium = base.titleMedium.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
+    bodyLarge = base.bodyLarge, bodyMedium = base.bodyMedium, bodySmall = base.bodySmall,
+    labelMedium = base.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+)
+
+/** Cartão com raio 20; campo, aviso e pílula com 12. */
+val Formas = Shapes(small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(20.dp))
+
+/** Espaços da escala (só 4, 8, 12, 16, 20 e 24) e alturas mínimas. */
+object Medida {
+    val tela = 20.dp; val entreCartoes = 12.dp; val dentroCartao = 16.dp
+    val antesDeSecao = 24.dp; val rotulo = 8.dp; val botao = 56.dp; val alvo = 48.dp
+}
+
+/**
  * Tema do app, que nunca segue o modo claro/escuro do sistema (o dono pediu). A tela do alarme fica com o [Claro]
  * (tons de vermelho; o YouTube da etapa da câmera, um WebView, segue o tema claro da tela e fica claro, pra iluminar o
  * rosto); a tela principal e o editor, com [escuro], ficam na [Noite].
  */
 @Composable
 fun TemaImplacavel(escuro: Boolean = false, content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (escuro) Noite else Claro, content = content)
+    // A escala vale só na tela principal e no editor; a tela do alarme guarda os tamanhos dela por enquanto
+    if (escuro) MaterialTheme(colorScheme = Noite, typography = Tipo, shapes = Formas, content = content)
+    else MaterialTheme(colorScheme = Claro, content = content)
 }
 
 /** Hora atual, que se atualiza sozinha a cada [intervaloMs] (relógio da tela do alarme, textos "toca em 9 h"). */

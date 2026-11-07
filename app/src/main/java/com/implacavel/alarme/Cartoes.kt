@@ -78,7 +78,7 @@ fun SecaoRecolhivel(titulo: String, resumo: String, alerta: Boolean, conteudo: @
     }
     Card(colors = cores, modifier = Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().clickable { aberta = !aberta }.padding(horizontal = 16.dp, vertical = 14.dp),
+            Modifier.fillMaxWidth().clickable { aberta = !aberta }.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
@@ -108,7 +108,7 @@ fun CartaoPoderes(poderes: Map<Poder, Boolean>, onLiberar: (Poder) -> Unit) {
     }
     SecaoRecolhivel("Permissions", resumo, alerta = faltam > 0) {
         poderes.forEach { (poder, liberado) ->
-            Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(poder.titulo, fontWeight = FontWeight.SemiBold)
                     Text(poder.explicacao, style = MaterialTheme.typography.bodySmall)
@@ -222,7 +222,7 @@ private fun TituloDoAjuste(texto: String) {
 
 @Composable
 private fun SubtituloDoAjuste(texto: String) {
-    Text(texto, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 20.dp))
+    Text(texto, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 24.dp))
 }
 
 /** Um ajuste em minutos, de [faixa].first a [faixa].last, de 1 em 1: o título com o valor e o controle. [onMudar] só ao soltar. */
@@ -238,7 +238,7 @@ private fun AjusteDeInteiro(titulo: String, valor: Int, faixa: IntRange, unidade
         "$titulo: ${if (mostrado == 0 && unidade != "min") "none" else "$mostrado $unidade"}",
         style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(top = 10.dp),
+        modifier = Modifier.padding(top = 12.dp),
     )
     Slider(
         value = arrastando,
@@ -293,7 +293,7 @@ fun SecaoIa(
         Text(
             "Who you are, what you want to learn, what you like talking about. The AI reads this every morning.",
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(bottom = 6.dp),
+            modifier = Modifier.padding(bottom = 8.dp),
         )
         OutlinedTextField(
             value = texto,
@@ -302,13 +302,13 @@ fun SecaoIa(
             minLines = 3,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text("${texto.length}/$SOBRE_MIM_MAX_LETRAS", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp))
+        Text("${texto.length}/$SOBRE_MIM_MAX_LETRAS", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
 
         TituloDoAjuste("Your words")
         Text(
             "Names and words you say that the voice recognition gets wrong, separated by commas. It listens for them, and the AI knows they may come out garbled.",
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(bottom = 6.dp),
+            modifier = Modifier.padding(bottom = 8.dp),
         )
         OutlinedTextField(
             value = suas,
@@ -322,7 +322,7 @@ fun SecaoIa(
         Text(
             "Only the last talk counts: at the end of each conversation the AI writes these lines again from scratch, and they expire after a day and a half. Nothing piles up.",
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(bottom = 6.dp),
+            modifier = Modifier.padding(bottom = 8.dp),
         )
         if (memoria.isBlank()) {
             Text("Nothing yet.", style = MaterialTheme.typography.bodyMedium)
@@ -382,7 +382,7 @@ private fun LinhaDoSom(nome: String, padrao: Boolean, onPadrao: () -> Unit, onRe
 fun CartaoAlarme(alarme: Alarme, agora: ZonedDateTime, tempos: Tempos, onLigar: (Boolean) -> Unit, onClick: () -> Unit) {
     val corHorario = if (alarme.ativo) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(alarme.horario, fontSize = 44.sp, fontWeight = FontWeight.Bold, color = corHorario)
                 Text(

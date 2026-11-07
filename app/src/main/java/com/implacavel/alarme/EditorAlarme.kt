@@ -93,17 +93,17 @@ fun EditorAlarme(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(16.dp))
-                Text("Repeat", style = MaterialTheme.typography.labelLarge, modifier = Modifier.fillMaxWidth())
+                Text("REPEAT", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
                 SeletorDias(dias) { dias = it }
                 Text(
                     resumoDias(dias),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("Type", style = MaterialTheme.typography.labelLarge, modifier = Modifier.fillMaxWidth())
+                Text("TYPE", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline, modifier = Modifier.fillMaxWidth())
                 // Os tempos são os dos ajustes (página "More" › Settings), iguais pra todos os alarmes
                 OpcaoTipo(
                     "Camera + phrases - ${tempos.cameraMin} min",
@@ -128,7 +128,7 @@ fun EditorAlarme(
                 // O remédio toca o toque suave do app: sem escolha de som
                 if (tipo != TipoDeAlarme.REMEDIO) {
                     Spacer(Modifier.height(8.dp))
-                    Text("Sound", style = MaterialTheme.typography.labelLarge, modifier = Modifier.fillMaxWidth())
+                    Text("SOUND", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline, modifier = Modifier.fillMaxWidth())
                     OpcaoSom("Default: ${padrao ?: "phone alarm ringtone"}", som == null) { som = null }
                     sons.forEach { s -> OpcaoSom(s.nome, som == s.nome) { som = s.nome } }
                     TextButton(onClick = { adicionarSom.launch(arrayOf("audio/*")) }, modifier = Modifier.fillMaxWidth()) { Text("Add new sound…") }
@@ -202,7 +202,7 @@ private fun SeletorDias(dias: Set<Int>, onMudar: (Set<Int>) -> Unit) {
 @Composable
 private fun OpcaoSom(nome: String, escolhido: Boolean, onEscolher: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onEscolher).padding(vertical = 2.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onEscolher).padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = escolhido, onClick = onEscolher)
@@ -213,7 +213,7 @@ private fun OpcaoSom(nome: String, escolhido: Boolean, onEscolher: () -> Unit) {
 @Composable
 private fun OpcaoTipo(titulo: String, descricao: String, escolhida: Boolean, onEscolher: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onEscolher).padding(vertical = 6.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onEscolher).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = escolhida, onClick = onEscolher)
