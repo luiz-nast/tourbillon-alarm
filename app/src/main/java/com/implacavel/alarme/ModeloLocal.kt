@@ -135,34 +135,57 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         private fun carregado(ctx: Context): Engine {
             engine?.let { return it }
             val caminho = arquivo(ctx)?.path ?: error("sem a pasta do app")
+            // 11-08: a GPU primeiro (medido no S24 FE, TesteDaIa --ez gpu true: ler 1678 tokens leva 2,2 s na GPU e 12,9 s
+            // na CPU; a 1ª palavra, 2,2 s contra 13 s; escrever fica parecido). Se ela não abrir, a CPU, como antes.
+            if (!gpuFalhou) runCatching { return iniciar(ctx, caminho, Backend.GPU(), "GPU") }.onFailure { gpuFalhou = true }
+            return iniciar(ctx, caminho, Backend.CPU(), "CPU")
+        }
+
+        /** A GPU não abriu uma vez: até o processo morrer, só a CPU (não paga a tentativa de novo a cada carga). */
+        @Volatile private var gpuFalhou = false
+
+        private fun iniciar(ctx: Context, caminho: String, backend: Backend, nome: String): Engine {
             val inicio = SystemClock.elapsedRealtime()
-            val novo = Engine(EngineConfig(modelPath = caminho, backend = Backend.CPU(), maxNumTokens = CONTEXTO_TOKENS, cacheDir = ctx.cacheDir.path))
+            val novo = Engine(EngineConfig(modelPath = caminho, backend = backend, maxNumTokens = CONTEXTO_TOKENS, cacheDir = ctx.cacheDir.path))
             try {
                 novo.initialize()
             } catch (e: Throwable) {
                 runCatching { novo.close() }
-                Log.w(TAG, "IA do celular: o modelo não carregou (${e.javaClass.simpleName}: ${e.message?.take(120)})")
+                Log.w(TAG, "IA do celular: o modelo não carregou na $nome (${e.javaClass.simpleName}: ${e.message?.take(120)})")
                 throw e
             }
-            Log.i(TAG, "IA do celular: modelo carregado em ${SystemClock.elapsedRealtime() - inicio} ms")
+            Log.i(TAG, "IA do celular: modelo carregado na $nome em ${SystemClock.elapsedRealtime() - inicio} ms")
             engine = novo
             return novo
         }
 
-        // A conversa das perguntas do Chiron, guardada entre uma pergunta e outra (só na thread do modelo): ler a instrução
-        // dele custa uns 12 s no S24 FE, então ela é lida uma vez e reaproveitada enquanto a instrução for a mesma (até
-        // [AVULSA_MAX_USOS] perguntas, pra a memória da conversa não encher). As perguntas de antes ficam como exemplos.
+        // A conversa das perguntas do Chiron (só na thread do modelo). 11-07: cada pergunta numa conversa limpa; antes, até
+        // 12 perguntas ficavam no histórico ("como exemplos") e uma resposta errada puxava a próxima pro mesmo lado. A API
+        // (0.16.1) não clona conversa, então a "reserva": logo depois de cada resposta, a usada fecha e a próxima já nasce
+        // lendo a instrução (uns 12 s no S24 FE), enquanto a voz do Chiron fala e a pessoa responde. Uma por vez na memória.
         private var avulsa: Conversation? = null
         private var instrucaoDaAvulsa: String? = null
-        private var usosDaAvulsa = 0
-        private const val AVULSA_MAX_USOS = 12
 
         /** Fecha a conversa do Chiron (só na thread do modelo). A da manhã nunca divide o modelo com ela ([conversaPronta], [anotar]). */
         private fun fecharAvulsa() {
             avulsa?.let { runCatching { it.close() } }
             avulsa = null
             instrucaoDaAvulsa = null
-            usosDaAvulsa = 0
+        }
+
+        /** A conversa limpa pra próxima pergunta do Chiron, já com a [instrucao] lida (só na thread do modelo). */
+        private fun reservarAvulsa(app: Context, instrucao: String) {
+            fecharAvulsa()
+            avulsa = carregado(app).createConversation(
+                ConversationConfig(
+                    systemInstruction = Contents.of(instrucao),
+                    samplerConfig = AMOSTRAGEM_AVULSA,
+                    prefillPrefaceOnInit = true,
+                    maxOutputToken = AVULSA_MAX_TOKENS,
+                    thinkingConfig = ThinkingConfig(enableThinking = false),
+                ),
+            )
+            instrucaoDaAvulsa = instrucao
         }
 
         /**
@@ -175,29 +198,22 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
             trabalho.execute {
                 val inicio = SystemClock.elapsedRealtime()
                 val texto = runCatching {
-                    if (avulsa == null || instrucao != instrucaoDaAvulsa || usosDaAvulsa >= AVULSA_MAX_USOS) {
-                        fecharAvulsa()
-                        avulsa = carregado(app).createConversation(
-                            ConversationConfig(
-                                systemInstruction = Contents.of(instrucao),
-                                samplerConfig = AMOSTRAGEM_AVULSA,
-                                prefillPrefaceOnInit = true,
-                                maxOutputToken = AVULSA_MAX_TOKENS,
-                                thinkingConfig = ThinkingConfig(enableThinking = false),
-                            ),
-                        )
-                        instrucaoDaAvulsa = instrucao
-                    }
+                    if (avulsa == null || instrucao != instrucaoDaAvulsa) reservarAvulsa(app, instrucao)
                     // Sem pergunta: só aquecer (o Chiron abriu; a primeira pergunta de verdade já sai rápida)
                     if (pergunta == null) return@runCatching null
-                    usosDaAvulsa++
                     textoDe(avulsa!!.sendMessage(pergunta))
                 }.onFailure {
                     fecharAvulsa() // uma conversa que falhou não é reaproveitada
                     Log.w(TAG, "IA do celular: pergunta de fora sem resposta (${it.javaClass.simpleName}: ${it.message?.take(120)})")
                 }.getOrNull()
-                Log.i(TAG, "IA do celular: ${if (pergunta == null) "aquecida pro Chiron" else "pergunta de fora respondida"} em ${SystemClock.elapsedRealtime() - inicio} ms (uso $usosDaAvulsa)")
+                Log.i(TAG, "IA do celular: ${if (pergunta == null) "aquecida pro Chiron" else "pergunta de fora respondida"} em ${SystemClock.elapsedRealtime() - inicio} ms")
                 handler.post { aoResponder(texto) }
+                // a pergunta foi pro histórico: a próxima já começa noutra, limpa
+                if (pergunta != null && avulsa != null) {
+                    val r = SystemClock.elapsedRealtime()
+                    runCatching { reservarAvulsa(app, instrucao) }.onFailure { fecharAvulsa() }
+                    Log.i(TAG, "IA do celular: conversa reserva do Chiron pronta em ${SystemClock.elapsedRealtime() - r} ms")
+                }
             }
         }
 

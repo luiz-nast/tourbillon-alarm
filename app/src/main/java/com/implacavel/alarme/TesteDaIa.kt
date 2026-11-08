@@ -5,6 +5,7 @@
 //   adb shell am broadcast -n com.implacavel.alarme/.TesteDaIa
 //   adb logcat -s Implacavel
 // Pra comparar outro tamanho de conversa (em tokens), sem recompilar: --ei tokens 4096
+// Na GPU em vez da CPU (11-08: ler a instrução na CPU leva ~20 s): --ez gpu true
 // Com um alarme tocando, não roda, e um alarme que começa no meio dele fica sem a IA ([ModeloLocal.emTeste]): o
 // modelo do alarme e o do teste não cabem juntos na memória.
 package com.implacavel.alarme
@@ -75,7 +76,7 @@ class TesteDaIa : BroadcastReceiver() {
         thread(name = "teste-da-ia") {
             try {
                 if (intent.getBooleanExtra("cancelar", false)) testarCancelamento(ctx.applicationContext, arquivo.path)
-                else testar(ctx.applicationContext, arquivo.path, intent.getIntExtra("tokens", CONTEXTO_TOKENS))
+                else testar(ctx.applicationContext, arquivo.path, intent.getIntExtra("tokens", CONTEXTO_TOKENS), intent.getBooleanExtra("gpu", false))
             } catch (e: Throwable) {
                 Log.w(TAG, "IA teste: falhou (${e.javaClass.simpleName}: ${e.message?.take(160)})")
             } finally {
@@ -93,11 +94,11 @@ class TesteDaIa : BroadcastReceiver() {
     }
 
     @OptIn(ExperimentalApi::class) // a medição de velocidade (ExperimentalFlags.enableBenchmark)
-    private fun testar(ctx: Context, caminho: String, tokens: Int) {
+    private fun testar(ctx: Context, caminho: String, tokens: Int, gpu: Boolean) {
         val inicio = SystemClock.elapsedRealtime()
-        Log.i(TAG, "IA teste: começando com $tokens tokens (memória livre ${memoriaLivreMb(ctx)} MB, calor ${calor(ctx)})")
+        Log.i(TAG, "IA teste: começando com $tokens tokens na ${if (gpu) "GPU" else "CPU"} (memória livre ${memoriaLivreMb(ctx)} MB, calor ${calor(ctx)})")
         ExperimentalFlags.enableBenchmark = true
-        Engine(EngineConfig(modelPath = caminho, backend = Backend.CPU(), maxNumTokens = tokens, cacheDir = ctx.cacheDir.path)).use { engine ->
+        Engine(EngineConfig(modelPath = caminho, backend = if (gpu) Backend.GPU() else Backend.CPU(), maxNumTokens = tokens, cacheDir = ctx.cacheDir.path)).use { engine ->
             engine.initialize()
             Log.i(TAG, "IA teste: modelo carregado em ${SystemClock.elapsedRealtime() - inicio} ms (memória do app ${memoriaDoAppMb(ctx)} MB)")
             // Do tamanho de uma manhã de verdade: 5 manchetes (inventadas, do jeito do Google Notícias), as metas cheias, o

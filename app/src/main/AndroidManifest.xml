@@ -74,6 +74,9 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Tema">
+        <!-- 11-08: a GPU do LiteRT-LM (o guia Kotlin pede as duas; sem elas no aparelho, fica a CPU) -->
+        <uses-native-library android:name="libOpenCL.so" android:required="false" />
+        <uses-native-library android:name="libvndksupport.so" android:required="false" />
 
         <activity
             android:name=".MainActivity"
