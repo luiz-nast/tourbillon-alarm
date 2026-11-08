@@ -133,12 +133,22 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
             val caminho = arquivo(ctx)?.path ?: error("sem a pasta do app")
             // 11-08: a GPU primeiro (medido no S24 FE, TesteDaIa --ez gpu true: ler 1678 tokens leva 2,2 s na GPU e 12,9 s
             // na CPU; a 1ª palavra, 2,2 s contra 13 s; escrever fica parecido). Se ela não abrir, a CPU, como antes.
-            if (!gpuFalhou) runCatching { return iniciar(ctx, caminho, Backend.GPU(), "GPU") }.onFailure { gpuFalhou = true }
+            if (!gpuFalhou && !soCpu) runCatching { return iniciar(ctx, caminho, Backend.GPU(), "GPU") }.onFailure { gpuFalhou = true }
             return iniciar(ctx, caminho, Backend.CPU(), "CPU")
         }
 
         /** A GPU não abriu uma vez: até o processo morrer, só a CPU (não paga a tentativa de novo a cada carga). */
         @Volatile private var gpuFalhou = false
+
+        /** (o dono, 11-08): a bateria "CPU forçada" do Chiron, pelo cabo ([TesteDaIa] --es modelo cpu): só a CPU até o "gpu". */
+        @Volatile private var soCpu = false
+
+        /** Pelo cabo: o modelo sai da memória e a próxima carga vem só na CPU ([cpu]) ou tenta a GPU de novo, mesmo se ela falhou. */
+        fun forcarCpu(cpu: Boolean) {
+            soCpu = cpu
+            gpuFalhou = false
+            liberar()
+        }
 
         private fun iniciar(ctx: Context, caminho: String, backend: Backend, nome: String): Engine {
             val inicio = SystemClock.elapsedRealtime()
@@ -185,7 +195,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         }
 
         /** Por que uma pergunta de fora com o prazo [ate] não vai pro modelo agora (null = vai): [semVez] com o alarme, o relógio e o backend de agora. */
-        fun semVezAgora(ate: Long): String? = semVez(ServicoDeIa.alarmeNaFrente(), ate, System.currentTimeMillis(), naCpu = gpuFalhou)
+        fun semVezAgora(ate: Long): String? = semVez(ServicoDeIa.alarmeNaFrente(), ate, System.currentTimeMillis(), naCpu = gpuFalhou || soCpu)
 
         /**
          * Uma pergunta avulsa de outro app (o Chiron, pelo [ServicoDeIa]), com a [instrucao] dele, a [pergunta] e o prazo

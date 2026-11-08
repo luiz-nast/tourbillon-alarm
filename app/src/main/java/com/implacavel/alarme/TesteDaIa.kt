@@ -6,6 +6,8 @@
 //   adb logcat -s Implacavel
 // Pra comparar outro tamanho de conversa (em tokens), sem recompilar: --ei tokens 4096
 // Na GPU em vez da CPU (11-08: ler a instrução na CPU leva ~20 s): --ez gpu true
+// O modelo compartilhado (o do Chiron e da manhã) recarregado só na CPU, sem rodar o teste: --es modelo cpu; de volta à
+// GPU: --es modelo gpu (o processo que morre também volta à GPU)
 // Com um alarme tocando, não roda, e um alarme que começa no meio dele fica sem a IA ([ModeloLocal.emTeste]): o
 // modelo do alarme e o do teste não cabem juntos na memória.
 package com.implacavel.alarme
@@ -64,6 +66,11 @@ class TesteDaIa : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         if (Ajustes.emAndamento != null || ModeloLocal.emTeste) {
             Log.w(TAG, "IA teste: tem alarme tocando (ou outro teste), o teste não roda")
+            return
+        }
+        intent.getStringExtra("modelo")?.let { backend ->
+            ModeloLocal.forcarCpu(backend == "cpu")
+            Log.i(TAG, "IA teste: o modelo compartilhado ${if (backend == "cpu") "só na CPU" else "tenta a GPU"} a partir da próxima pergunta")
             return
         }
         val arquivo = ModeloLocal.arquivo(ctx)
