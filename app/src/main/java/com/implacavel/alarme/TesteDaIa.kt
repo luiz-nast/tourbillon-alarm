@@ -75,8 +75,9 @@ class TesteDaIa : BroadcastReceiver() {
         }
         // --es modo CAMINHADA|CAMERA|CONVERSA [--ei segundos 120]: o Maverick Truck vê essa etapa da manhã, sem alarme
         intent.getStringExtra("modo")?.let { etapa ->
-            FonteDoModo.fingido = etapa to System.currentTimeMillis() + intent.getIntExtra("segundos", 120) * 1000L
-            Log.i(TAG, "IA teste: etapa da manhã fingida: $etapa por ${intent.getIntExtra("segundos", 120)} s")
+            val segundos = intent.getIntExtra("segundos", 120).coerceIn(1, 600) // esquecida, some em 10 min
+            FonteDoModo.fingido = etapa to System.currentTimeMillis() + segundos * 1000L
+            Log.i(TAG, "IA teste: etapa da manhã fingida: $etapa por $segundos s")
             return
         }
         val arquivo = ModeloLocal.arquivo(ctx)

@@ -15,7 +15,8 @@ class FonteDoModo : ContentProvider() {
     override fun onCreate(): Boolean = true
 
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, args: Array<out String>?, ordem: String?): Cursor {
-        val modo = fingido?.takeIf { System.currentTimeMillis() < it.second }?.first
+        // a etapa fingida pelo cabo só vale sem alarme de verdade: a manhã real sempre manda
+        val modo = fingido?.takeIf { AlarmeService.tocando.value == null && System.currentTimeMillis() < it.second }?.first
             ?: modoDaManha(emAtividade = AlarmeService.tocando.value?.missao == true, fase = faseAgora())
         return MatrixCursor(arrayOf("etapa", "valeAte")).apply { addRow(arrayOf<Any>(modo, modoValeAte(modo, System.currentTimeMillis()))) }
     }
