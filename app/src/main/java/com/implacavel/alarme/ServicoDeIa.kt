@@ -68,16 +68,23 @@ class ServicoDeIa : Service() {
 
     /** O Chiron abriu: o modelo carrega e lê a instrução dele já, pra a primeira pergunta não levar 20 s. */
     private fun aquecer(msg: Message) {
-        val instrucao = msg.data?.getString("instrucao").orEmpty().take(INSTRUCAO_MAX)
+        val instrucao = instrucaoDe(msg)
         if (instrucao.isBlank() || alarmeNaFrente() || !ModeloLocal.disponivel(this)) return
         val numero = ++pedidos
         principal.removeCallbacks(soltar)
         ModeloLocal.perguntaAvulsa(this, instrucao, null) { if (numero == pedidos) soltarDaquiAPouco() }
     }
 
+    /** A instrução do cliente, até [INSTRUCAO_MAX] letras. (o dono, 11-08): cortava calado; agora avisa no log. */
+    private fun instrucaoDe(msg: Message): String {
+        val instrucao = msg.data?.getString("instrucao").orEmpty()
+        if (instrucao.length > INSTRUCAO_MAX) Log.w(TAG, "IA do celular: instrução de ${instrucao.length} letras, cortada em $INSTRUCAO_MAX")
+        return instrucao.take(INSTRUCAO_MAX)
+    }
+
     private fun atender(msg: Message) {
         val quem = msg.replyTo ?: return
-        val instrucao = msg.data?.getString("instrucao").orEmpty().take(INSTRUCAO_MAX)
+        val instrucao = instrucaoDe(msg)
         val pergunta = msg.data?.getString("prompt").orEmpty().take(PERGUNTA_MAX)
         fun devolver(texto: String?) {
             val resposta = Message.obtain(null, RESPOSTA).apply { data = Bundle().apply { putString("texto", texto.orEmpty()) } }
