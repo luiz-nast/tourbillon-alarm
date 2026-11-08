@@ -5,7 +5,7 @@
 // Só entra quem tem a permissão com.implacavel.alarme.permission.IA, de assinatura (só apps com a mesma chave deste).
 // O alarme sempre passa na frente: com um alarme tocando (ou em andamento, ou o teste da IA pelo cabo), a resposta
 // volta vazia na hora e o Chiron se vira com as regras dele. Sem uso por PARADO_MS, o modelo sai da memória.
-// O protocolo está no README do Chiron (docs/IA-compartilhada.md).
+// O protocolo está em docs/IA-compartilhada.md (aqui e no Chiron); os parâmetros de geração, em ContratoDoMotor.kt.
 package com.implacavel.alarme
 
 import android.app.Service
