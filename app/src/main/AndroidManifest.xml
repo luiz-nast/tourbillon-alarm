@@ -186,5 +186,13 @@
             android:authorities="com.implacavel.alarme.sons"
             android:exported="true"
             android:permission="com.implacavel.alarme.permission.SONS" />
+
+        <!-- O modo da manhã pro Maverick Truck (FonteDoModo): só leitura, com a mesma permissão de assinatura dos sons -->
+        <provider
+            android:name=".FonteDoModo"
+            android:authorities="com.implacavel.alarme.modo"
+            android:exported="true"
+            android:readPermission="com.implacavel.alarme.permission.SONS"
+            android:writePermission="com.implacavel.alarme.permission.SONS" />
     </application>
 </manifest>

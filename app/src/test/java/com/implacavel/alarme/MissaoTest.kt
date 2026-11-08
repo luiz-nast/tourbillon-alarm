@@ -177,6 +177,29 @@ class MissaoTest {
     }
 
     @Test
+    fun modoDaManhaProMaverickTruck() {
+        // Na caminhada (e no prazo pra sair), Instagram livre; na câmera, YouTube livre; o resto da atividade, trancado
+        assertEquals("CAMINHADA", modoDaManha(emAtividade = true, fase = FaseDoTeste.PREPARO))
+        assertEquals("CAMINHADA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CAMINHADA))
+        assertEquals("CAMERA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CAMERA_FACIL))
+        assertEquals("CAMERA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CAMERA_EXIGENTE))
+        assertEquals("CONVERSA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CONVERSA))
+        assertEquals("CONVERSA", modoDaManha(emAtividade = true, fase = FaseDoTeste.FRASES))
+        assertEquals("CONVERSA", modoDaManha(emAtividade = true, fase = null)) // a música, o bom dia, a comemoração
+        // Fora da atividade: nenhuma, seja qual for a fase
+        assertEquals("nenhuma", modoDaManha(emAtividade = false, fase = null))
+        assertEquals("nenhuma", modoDaManha(emAtividade = false, fase = FaseDoTeste.CAMINHADA))
+    }
+
+    @Test
+    fun modoValeNoventaSegundosNaAtividadeEZeroFora() {
+        val agora = 1_700_000_000_000L
+        assertEquals(agora + 90_000, modoValeAte("CAMINHADA", agora))
+        assertEquals(agora + 90_000, modoValeAte("CONVERSA", agora))
+        assertEquals(0L, modoValeAte("nenhuma", agora))
+    }
+
+    @Test
     fun fasesDosBotoesDoTeste() {
         // Conversa + caminhada: conversa › prazo › caminhada
         assertEquals(FaseDoTeste.CONVERSA, faseDoTeste(conversa = true, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = false))
