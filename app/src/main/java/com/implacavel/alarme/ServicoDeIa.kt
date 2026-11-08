@@ -91,10 +91,6 @@ class ServicoDeIa : Service() {
             runCatching { quem.send(resposta) }
         }
         if (pergunta.isBlank()) return devolver(null)
-        if (alarmeNaFrente()) {
-            Log.i(TAG, "IA do celular: o Chiron perguntou com alarme em andamento, fica sem resposta")
-            return devolver(null)
-        }
         val ate = msg.data?.getLong(CHAVE_DO_PRAZO, 0L) ?: 0L
         ModeloLocal.semVezAgora(ate)?.let { motivo ->
             Log.i(TAG, "IA do celular: o Chiron perguntou, fica sem resposta ($motivo)")

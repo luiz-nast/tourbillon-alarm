@@ -184,14 +184,14 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
             instrucaoDaAvulsa = instrucao
         }
 
-        /** Por que uma pergunta de fora com o prazo [ate] não vai pro modelo agora (null = vai): [semVez] com o relógio de agora. */
-        fun semVezAgora(ate: Long): String? = semVez(ate, System.currentTimeMillis())
+        /** Por que uma pergunta de fora com o prazo [ate] não vai pro modelo agora (null = vai): [semVez] com o alarme e o relógio de agora. */
+        fun semVezAgora(ate: Long): String? = semVez(ServicoDeIa.alarmeNaFrente(), ate, System.currentTimeMillis())
 
         /**
          * Uma pergunta avulsa de outro app (o Chiron, pelo [ServicoDeIa]), com a [instrucao] dele, a [pergunta] e o prazo
          * [ate] (0 = sem). Na thread do modelo, depois do que estiver na fila (nunca junto com a conversa da manhã, que
-         * fecha esta antes de abrir: [conversaDaManha]); a resposta chega na principal (null se não deu). Quem chama
-         * confere antes se há alarme; o prazo é conferido de novo na vez dela ([semVezAgora]).
+         * fecha esta antes de abrir: [conversaDaManha]); a resposta chega na principal (null se não deu). O alarme e o
+         * prazo são conferidos de novo na vez dela e antes da reserva ([semVezAgora]).
          */
         fun perguntaAvulsa(ctx: Context, instrucao: String, pergunta: String?, ate: Long = 0L, aoResponder: (String?) -> Unit) {
             val app = ctx.applicationContext
@@ -216,6 +216,8 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
                 handler.post { aoResponder(texto) }
                 // a pergunta foi pro histórico: a próxima já começa noutra, limpa
                 if (pergunta != null && avulsa != null) {
+                    // (o dono, 11-08): com um alarme na frente, a reserva não lê a instrução (a manhã vem antes); a usada fecha
+                    if (semVezAgora(0L) != null) return@execute fecharAvulsa()
                     val r = SystemClock.elapsedRealtime()
                     runCatching { reservarAvulsa(app, instrucao) }.onFailure { fecharAvulsa() }
                     Log.i(TAG, "IA do celular: conversa reserva do Chiron pronta em ${SystemClock.elapsedRealtime() - r} ms")

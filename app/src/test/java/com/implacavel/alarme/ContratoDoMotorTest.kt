@@ -28,8 +28,15 @@ class ContratoDoMotorTest {
     @Test
     fun prazoVencidoNaoGeraESemPrazoFicaComoAntes() {
         val agora = 1_000_000L
-        assertEquals("prazo vencido", semVez(ate = agora - 1, agora = agora))
-        assertNull(semVez(ate = agora + 10_000, agora = agora))
-        assertNull(semVez(ate = 0L, agora = agora)) // sem a chave "ate": como antes
+        assertEquals("prazo vencido", semVez(alarme = false, ate = agora - 1, agora = agora))
+        assertNull(semVez(alarme = false, ate = agora + 10_000, agora = agora))
+        assertNull(semVez(alarme = false, ate = 0L, agora = agora)) // sem a chave "ate": como antes
+    }
+
+    @Test
+    fun alarmeNaFrenteNaoGeraMesmoNoPrazo() {
+        val agora = 1_000_000L
+        assertEquals("alarme na frente", semVez(alarme = true, ate = agora + 10_000, agora = agora))
+        assertEquals("alarme na frente", semVez(alarme = true, ate = 0L, agora = agora))
     }
 }

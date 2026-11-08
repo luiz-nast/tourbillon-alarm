@@ -26,11 +26,13 @@ const val AVULSA_MAX_TOKENS = 64
 const val CHAVE_DO_PRAZO = "ate"
 
 /**
- * Por que uma pergunta de fora fica sem resposta, sem gerar (null = vai pro modelo): o prazo [ate] (0 = sem prazo) já
- * passou em [agora]. (o dono, 11-08): conferido na chegada e de novo na vez dela, na thread do modelo; antes, as
+ * Por que uma pergunta de fora fica sem resposta, sem gerar (null = vai pro modelo): o [alarme] na frente
+ * ([ServicoDeIa.alarmeNaFrente]) ou o prazo [ate] (0 = sem prazo) já passado em [agora]. (o dono, 11-08): conferido na
+ * chegada, de novo na vez dela, na thread do modelo, e antes da reserva; antes, só o alarme e só na chegada, e as
  * perguntas abandonadas faziam fila ali.
  */
-fun semVez(ate: Long, agora: Long): String? = when {
+fun semVez(alarme: Boolean, ate: Long, agora: Long): String? = when {
+    alarme -> "alarme na frente"
     ate > 0 && agora > ate -> "prazo vencido"
     else -> null
 }
