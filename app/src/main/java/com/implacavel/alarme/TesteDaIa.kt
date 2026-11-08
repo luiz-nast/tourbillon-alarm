@@ -73,6 +73,12 @@ class TesteDaIa : BroadcastReceiver() {
             Log.i(TAG, "IA teste: o modelo compartilhado ${if (backend == "cpu") "só na CPU" else "tenta a GPU"} a partir da próxima pergunta")
             return
         }
+        // --es modo CAMINHADA|CAMERA|CONVERSA [--ei segundos 120]: o Maverick Truck vê essa etapa da manhã, sem alarme
+        intent.getStringExtra("modo")?.let { etapa ->
+            FonteDoModo.fingido = etapa to System.currentTimeMillis() + intent.getIntExtra("segundos", 120) * 1000L
+            Log.i(TAG, "IA teste: etapa da manhã fingida: $etapa por ${intent.getIntExtra("segundos", 120)} s")
+            return
+        }
         val arquivo = ModeloLocal.arquivo(ctx)
         if (arquivo?.length() != TAMANHO_DO_MODELO) {
             Log.w(TAG, "IA teste: modelo não está no celular (${arquivo?.path}, ${arquivo?.length()} bytes)")

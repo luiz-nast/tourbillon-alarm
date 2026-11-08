@@ -15,7 +15,8 @@ class FonteDoModo : ContentProvider() {
     override fun onCreate(): Boolean = true
 
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, args: Array<out String>?, ordem: String?): Cursor {
-        val modo = modoDaManha(emAtividade = AlarmeService.tocando.value?.missao == true, fase = faseAgora())
+        val modo = fingido?.takeIf { System.currentTimeMillis() < it.second }?.first
+            ?: modoDaManha(emAtividade = AlarmeService.tocando.value?.missao == true, fase = faseAgora())
         return MatrixCursor(arrayOf("etapa", "valeAte")).apply { addRow(arrayOf<Any>(modo, modoValeAte(modo, System.currentTimeMillis()))) }
     }
 
@@ -26,6 +27,11 @@ class FonteDoModo : ContentProvider() {
             conversa = conversa.value != null, caminhada = caminhada.value != null, noPrazo = false,
             verificacao = verificacao.value != null, metadeVerificada = false, naCamera = !comCaminhada.value,
         )
+    }
+
+    companion object {
+        /** (o dono, 11-08): o teste pelo cabo finge uma etapa até a hora dada, sem alarme nem som (TesteDaIa --es modo). */
+        @Volatile var fingido: Pair<String, Long>? = null
     }
 
     override fun getType(uri: Uri): String? = null
