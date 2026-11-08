@@ -11,5 +11,10 @@ import com.google.ai.edge.litertlm.SamplerConfig
 /** As perguntas de fora (escolher uma habilidade e responder em JSON): temperatura bem baixa, sem invenção. */
 internal val AMOSTRAGEM_AVULSA = SamplerConfig(topK = 20, topP = 0.9, temperature = 0.2)
 
-/** Tamanho máximo da resposta de uma pergunta de fora (uma linha JSON). */
-const val AVULSA_MAX_TOKENS = 120
+/**
+ * Tamanho máximo da resposta de uma pergunta de fora (uma linha JSON). (o dono, 11-08): era 120; medido na bateria 1b
+ * (339 respostas), a maior saída teve 111 letras (~32 tokens); o "conversar" com a fala de até 20 palavras dá ~54. Com
+ * 17 a 19 tokens por segundo na GPU, o pior caso cai de ~8 s pra ~4 s. Passou do teto, o JSON sai cortado e valem as
+ * regras do cliente.
+ */
+const val AVULSA_MAX_TOKENS = 64
