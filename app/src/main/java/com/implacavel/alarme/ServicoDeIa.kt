@@ -20,7 +20,7 @@ import android.util.Log
 
 class ServicoDeIa : Service() {
     companion object {
-        const val PERGUNTAR = 1 // Chiron → aqui: Bundle("instrucao", "prompt"), replyTo
+        const val PERGUNTAR = 1 // Chiron → aqui: Bundle("instrucao", "prompt", opcional "ate": Long), replyTo
         const val RESPOSTA = 2 // aqui → Chiron: Bundle("texto"); vazio = não deu
         const val AQUECER = 3 // Chiron → aqui: Bundle("instrucao"); carrega o modelo e lê a instrução, sem resposta
         const val OCUPADO = 4 // Chiron → aqui: "está com um alarme?" (antes de tocar um lembrete); volta RESPOSTA com Bundle("ocupado")
@@ -95,13 +95,18 @@ class ServicoDeIa : Service() {
             Log.i(TAG, "IA do celular: o Chiron perguntou com alarme em andamento, fica sem resposta")
             return devolver(null)
         }
+        val ate = msg.data?.getLong(CHAVE_DO_PRAZO, 0L) ?: 0L
+        ModeloLocal.semVezAgora(ate)?.let { motivo ->
+            Log.i(TAG, "IA do celular: o Chiron perguntou, fica sem resposta ($motivo)")
+            return devolver(null)
+        }
         if (!ModeloLocal.disponivel(this)) {
             Log.i(TAG, "IA do celular: o Chiron perguntou, mas o modelo não está disponível (arquivo ou memória)")
             return devolver(null)
         }
         val numero = ++pedidos
         principal.removeCallbacks(soltar)
-        ModeloLocal.perguntaAvulsa(this, instrucao, pergunta) { texto ->
+        ModeloLocal.perguntaAvulsa(this, instrucao, pergunta, ate) { texto ->
             devolver(texto)
             if (numero == pedidos) soltarDaquiAPouco()
         }

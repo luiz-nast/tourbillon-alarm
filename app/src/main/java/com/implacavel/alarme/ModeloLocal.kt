@@ -184,15 +184,25 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
             instrucaoDaAvulsa = instrucao
         }
 
+        /** Por que uma pergunta de fora com o prazo [ate] não vai pro modelo agora (null = vai): [semVez] com o relógio de agora. */
+        fun semVezAgora(ate: Long): String? = semVez(ate, System.currentTimeMillis())
+
         /**
-         * Uma pergunta avulsa de outro app (o Chiron, pelo [ServicoDeIa]), com a [instrucao] dele e a [pergunta]. Na
-         * thread do modelo, depois do que estiver na fila (nunca junto com a conversa da manhã, que fecha esta antes de
-         * abrir: [conversaDaManha]); a resposta chega na principal (null se não deu). Quem chama confere antes se há alarme.
+         * Uma pergunta avulsa de outro app (o Chiron, pelo [ServicoDeIa]), com a [instrucao] dele, a [pergunta] e o prazo
+         * [ate] (0 = sem). Na thread do modelo, depois do que estiver na fila (nunca junto com a conversa da manhã, que
+         * fecha esta antes de abrir: [conversaDaManha]); a resposta chega na principal (null se não deu). Quem chama
+         * confere antes se há alarme; o prazo é conferido de novo na vez dela ([semVezAgora]).
          */
-        fun perguntaAvulsa(ctx: Context, instrucao: String, pergunta: String?, aoResponder: (String?) -> Unit) {
+        fun perguntaAvulsa(ctx: Context, instrucao: String, pergunta: String?, ate: Long = 0L, aoResponder: (String?) -> Unit) {
             val app = ctx.applicationContext
             trabalho.execute {
                 val inicio = SystemClock.elapsedRealtime()
+                val motivo = semVezAgora(ate)
+                if (motivo != null) {
+                    Log.i(TAG, "IA do celular: pergunta de fora sem resposta na vez dela ($motivo)")
+                    handler.post { aoResponder(null) }
+                    return@execute
+                }
                 val texto = runCatching {
                     if (avulsa == null || instrucao != instrucaoDaAvulsa) reservarAvulsa(app, instrucao)
                     // Sem pergunta: só aquecer (o Chiron abriu; a primeira pergunta de verdade já sai rápida)

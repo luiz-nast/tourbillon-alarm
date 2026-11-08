@@ -18,3 +18,19 @@ internal val AMOSTRAGEM_AVULSA = SamplerConfig(topK = 20, topP = 0.9, temperatur
  * regras do cliente.
  */
 const val AVULSA_MAX_TOKENS = 64
+
+/**
+ * A chave do prazo no Bundle do PERGUNTAR: até quando (System.currentTimeMillis) o cliente espera a resposta. Sem ela,
+ * sem prazo. Quem desiste não cancela nada no modelo (nunca cancelProcess): o prazo vencido é o cancelamento.
+ */
+const val CHAVE_DO_PRAZO = "ate"
+
+/**
+ * Por que uma pergunta de fora fica sem resposta, sem gerar (null = vai pro modelo): o prazo [ate] (0 = sem prazo) já
+ * passou em [agora]. (o dono, 11-08): conferido na chegada e de novo na vez dela, na thread do modelo; antes, as
+ * perguntas abandonadas faziam fila ali.
+ */
+fun semVez(ate: Long, agora: Long): String? = when {
+    ate > 0 && agora > ate -> "prazo vencido"
+    else -> null
+}

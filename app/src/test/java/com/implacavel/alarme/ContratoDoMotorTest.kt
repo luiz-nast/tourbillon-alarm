@@ -1,5 +1,7 @@
 package com.implacavel.alarme
 
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -21,5 +23,13 @@ class ContratoDoMotorTest {
         }
         // (o dono, 11-08): 120 -> ~60, o pior caso cai de ~8 s pra ~4 s (17 a 19 tokens por segundo na GPU)
         assertTrue(AVULSA_MAX_TOKENS <= 64)
+    }
+
+    @Test
+    fun prazoVencidoNaoGeraESemPrazoFicaComoAntes() {
+        val agora = 1_000_000L
+        assertEquals("prazo vencido", semVez(ate = agora - 1, agora = agora))
+        assertNull(semVez(ate = agora + 10_000, agora = agora))
+        assertNull(semVez(ate = 0L, agora = agora)) // sem a chave "ate": como antes
     }
 }
