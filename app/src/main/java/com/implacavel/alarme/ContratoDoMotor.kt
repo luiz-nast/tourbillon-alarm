@@ -27,12 +27,14 @@ const val CHAVE_DO_PRAZO = "ate"
 
 /**
  * Por que uma pergunta de fora fica sem resposta, sem gerar (null = vai pro modelo): o [alarme] na frente
- * ([ServicoDeIa.alarmeNaFrente]) ou o prazo [ate] (0 = sem prazo) já passado em [agora]. (o dono, 11-08): conferido na
+ * ([ServicoDeIa.alarmeNaFrente]), o prazo [ate] (0 = sem prazo) já passado em [agora], ou o modelo [naCpu] (a GPU não
+ * abriu: ler a instrução leva 12 a 21 s, e o cliente responde pelas regras dele). (o dono, 11-08): conferido na
  * chegada, de novo na vez dela, na thread do modelo, e antes da reserva; antes, só o alarme e só na chegada, e as
- * perguntas abandonadas faziam fila ali.
+ * perguntas abandonadas faziam fila ali. A conversa da manhã não passa por aqui: na CPU, ela segue como sempre.
  */
-fun semVez(alarme: Boolean, ate: Long, agora: Long): String? = when {
+fun semVez(alarme: Boolean, ate: Long, agora: Long, naCpu: Boolean): String? = when {
     alarme -> "alarme na frente"
     ate > 0 && agora > ate -> "prazo vencido"
+    naCpu -> "modelo na CPU"
     else -> null
 }

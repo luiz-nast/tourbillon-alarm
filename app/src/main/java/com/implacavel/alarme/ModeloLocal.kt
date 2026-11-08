@@ -184,20 +184,23 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
             instrucaoDaAvulsa = instrucao
         }
 
-        /** Por que uma pergunta de fora com o prazo [ate] não vai pro modelo agora (null = vai): [semVez] com o alarme e o relógio de agora. */
-        fun semVezAgora(ate: Long): String? = semVez(ServicoDeIa.alarmeNaFrente(), ate, System.currentTimeMillis())
+        /** Por que uma pergunta de fora com o prazo [ate] não vai pro modelo agora (null = vai): [semVez] com o alarme, o relógio e o backend de agora. */
+        fun semVezAgora(ate: Long): String? = semVez(ServicoDeIa.alarmeNaFrente(), ate, System.currentTimeMillis(), naCpu = gpuFalhou)
 
         /**
          * Uma pergunta avulsa de outro app (o Chiron, pelo [ServicoDeIa]), com a [instrucao] dele, a [pergunta] e o prazo
          * [ate] (0 = sem). Na thread do modelo, depois do que estiver na fila (nunca junto com a conversa da manhã, que
-         * fecha esta antes de abrir: [conversaDaManha]); a resposta chega na principal (null se não deu). O alarme e o
-         * prazo são conferidos de novo na vez dela e antes da reserva ([semVezAgora]).
+         * fecha esta antes de abrir: [conversaDaManha]); a resposta chega na principal (null se não deu). O alarme, o
+         * prazo e a CPU são conferidos de novo na vez dela e antes da reserva ([semVezAgora]).
          */
         fun perguntaAvulsa(ctx: Context, instrucao: String, pergunta: String?, ate: Long = 0L, aoResponder: (String?) -> Unit) {
             val app = ctx.applicationContext
             trabalho.execute {
                 val inicio = SystemClock.elapsedRealtime()
-                val motivo = semVezAgora(ate)
+                val motivo = semVezAgora(ate) ?: run {
+                    runCatching { carregado(app) } // a 1ª carga diz se a GPU abriu (uns segundos): confere de novo depois
+                    semVezAgora(ate)
+                }
                 if (motivo != null) {
                     Log.i(TAG, "IA do celular: pergunta de fora sem resposta na vez dela ($motivo)")
                     handler.post { aoResponder(null) }
@@ -216,7 +219,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
                 handler.post { aoResponder(texto) }
                 // a pergunta foi pro histórico: a próxima já começa noutra, limpa
                 if (pergunta != null && avulsa != null) {
-                    // (o dono, 11-08): com um alarme na frente, a reserva não lê a instrução (a manhã vem antes); a usada fecha
+                    // (o dono, 11-08): com um alarme na frente (ou na CPU), a reserva não lê a instrução; a usada fecha
                     if (semVezAgora(0L) != null) return@execute fecharAvulsa()
                     val r = SystemClock.elapsedRealtime()
                     runCatching { reservarAvulsa(app, instrucao) }.onFailure { fecharAvulsa() }

@@ -28,15 +28,21 @@ class ContratoDoMotorTest {
     @Test
     fun prazoVencidoNaoGeraESemPrazoFicaComoAntes() {
         val agora = 1_000_000L
-        assertEquals("prazo vencido", semVez(alarme = false, ate = agora - 1, agora = agora))
-        assertNull(semVez(alarme = false, ate = agora + 10_000, agora = agora))
-        assertNull(semVez(alarme = false, ate = 0L, agora = agora)) // sem a chave "ate": como antes
+        assertEquals("prazo vencido", semVez(alarme = false, ate = agora - 1, agora = agora, naCpu = false))
+        assertNull(semVez(alarme = false, ate = agora + 10_000, agora = agora, naCpu = false))
+        assertNull(semVez(alarme = false, ate = 0L, agora = agora, naCpu = false)) // sem a chave "ate": como antes
     }
 
     @Test
     fun alarmeNaFrenteNaoGeraMesmoNoPrazo() {
         val agora = 1_000_000L
-        assertEquals("alarme na frente", semVez(alarme = true, ate = agora + 10_000, agora = agora))
-        assertEquals("alarme na frente", semVez(alarme = true, ate = 0L, agora = agora))
+        assertEquals("alarme na frente", semVez(alarme = true, ate = agora + 10_000, agora = agora, naCpu = false))
+        assertEquals("alarme na frente", semVez(alarme = true, ate = 0L, agora = agora, naCpu = false))
+    }
+
+    @Test
+    fun naCpuNaoGeraNaHora() {
+        assertEquals("modelo na CPU", semVez(alarme = false, ate = 0L, agora = 1_000_000L, naCpu = true))
+        assertNull(semVez(alarme = false, ate = 0L, agora = 1_000_000L, naCpu = false))
     }
 }
