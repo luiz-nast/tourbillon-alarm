@@ -53,11 +53,7 @@ const val RESPOSTA_MAX_TOKENS = 72 // 10-28: +8 pro juízo ("[VAGUE]") e a respo
 /** A amostragem do Gemma 4 (a recomendada pelo Google, com a temperatura um pouco abaixo de 1: varia as falas sem perder o fio). */
 private val AMOSTRAGEM = SamplerConfig(topK = 64, topP = 0.95, temperature = 0.9)
 
-/** As perguntas do Chiron (escolher uma habilidade e responder em JSON): temperatura bem baixa, sem invenção. */
-private val AMOSTRAGEM_AVULSA = SamplerConfig(topK = 20, topP = 0.9, temperature = 0.2)
-
-/** Tamanho máximo da resposta de uma pergunta do Chiron (uma linha JSON). */
-private const val AVULSA_MAX_TOKENS = 120
+// As perguntas de fora (o Chiron): a amostragem e o teto estão no contrato do motor (ContratoDoMotor.kt)
 
 /** Quem anota é mais certinho: temperatura baixa. */
 private val AMOSTRAGEM_DAS_ANOTACOES = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.3)
