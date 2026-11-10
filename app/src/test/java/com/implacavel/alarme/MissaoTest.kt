@@ -177,7 +177,7 @@ class MissaoTest {
     }
 
     @Test
-    fun modoDaManhaProMaverickTruck() {
+    fun modoDaManhaProMistral() {
         // Na caminhada (e no prazo pra sair), Instagram livre; na câmera, YouTube livre; o resto da atividade, trancado
         assertEquals("CAMINHADA", modoDaManha(emAtividade = true, fase = FaseDoTeste.PREPARO))
         assertEquals("CAMINHADA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CAMINHADA))

@@ -128,7 +128,7 @@ fun faseDoTeste(conversa: Boolean, caminhada: Boolean, noPrazo: Boolean, verific
 }
 
 /**
- * O modo da manhã que o Maverick Truck lê ([FonteDoModo]), pela [fase] que a tela do alarme mostra ([faseDoTeste]).
+ * O modo da manhã que o Mistral lê ([FonteDoModo]), pela [fase] que a tela do alarme mostra ([faseDoTeste]).
  * (o dono, 11-08): na caminhada (e no prazo pra sair), Instagram livre; na câmera (a etapa com o YouTube), YouTube livre;
  * qualquer outra etapa da atividade (a música, o bom dia, a conversa, as frases, a comemoração) é CONVERSA: tudo
  * trancado. Fora da atividade ([emAtividade]: um alarme com missão tocando), "nenhuma".
@@ -140,7 +140,7 @@ fun modoDaManha(emAtividade: Boolean, fase: FaseDoTeste?): String = when {
     else -> "CONVERSA"
 }
 
-/** Por quanto tempo o Maverick Truck crê no modo lido: depois disso sem ler de novo (o Tourbillon morto), as regras dele. */
+/** Por quanto tempo o Mistral crê no modo lido: depois disso sem ler de novo (o Tourbillon morto), as regras dele. */
 const val MODO_VALE_MS = 90_000L
 
 /** Até quando (epoch, ms) vale o [modo] lido em [agora]: [MODO_VALE_MS] na atividade, 0 fora dela. */

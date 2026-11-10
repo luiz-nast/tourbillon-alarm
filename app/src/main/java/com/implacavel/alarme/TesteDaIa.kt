@@ -73,7 +73,7 @@ class TesteDaIa : BroadcastReceiver() {
             Log.i(TAG, "IA teste: o modelo compartilhado ${if (backend == "cpu") "só na CPU" else "tenta a GPU"} a partir da próxima pergunta")
             return
         }
-        // --es modo CAMINHADA|CAMERA|CONVERSA [--ei segundos 120]: o Maverick Truck vê essa etapa da manhã, sem alarme
+        // --es modo CAMINHADA|CAMERA|CONVERSA [--ei segundos 120]: o Mistral vê essa etapa da manhã, sem alarme
         intent.getStringExtra("modo")?.let { etapa ->
             val segundos = intent.getIntExtra("segundos", 120).coerceIn(1, 600) // esquecida, some em 10 min
             FonteDoModo.fingido = etapa to System.currentTimeMillis() + segundos * 1000L

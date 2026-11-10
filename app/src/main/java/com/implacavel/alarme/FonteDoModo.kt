@@ -1,7 +1,7 @@
-// O modo da manhã aberto pro Maverick Truck, o outro app do dono. (o dono, 11-08): "durante a atividade da manhã do
-// Tourbillon, ele controla o Maverick Truck". Só leitura, com a mesma permissão de assinatura da [FonteDeSons]:
+// O modo da manhã aberto pro Mistral, o outro app do dono. (o dono, 11-08): "durante a atividade da manhã do
+// Tourbillon, ele controla o Mistral". Só leitura, com a mesma permissão de assinatura da [FonteDeSons]:
 //   content://com.implacavel.alarme.modo   uma linha: etapa (CONVERSA, CAMINHADA, CAMERA ou nenhuma) e valeAte
-// (epoch, ms: agora + 90 s na atividade, 0 fora dela; [modoDaManha], [modoValeAte]). Quem decide é o Maverick, e ele
+// (epoch, ms: agora + 90 s na atividade, 0 fora dela; [modoDaManha], [modoValeAte]). Quem decide é o Mistral, e ele
 // falha fechado: sem resposta, etapa desconhecida ou valeAte vencido, valem as regras normais dele.
 package com.implacavel.alarme
 

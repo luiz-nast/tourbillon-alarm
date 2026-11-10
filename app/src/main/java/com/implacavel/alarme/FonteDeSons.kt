@@ -1,12 +1,12 @@
-// A biblioteca de sons ([Sons]) aberta pro Maverick Truck, o outro app do dono (10-31): a mesma base de músicas nos dois.
+// A biblioteca de sons ([Sons]) aberta pro Mistral, o outro app do dono (10-31): a mesma base de músicas nos dois.
 // Só entra quem tem a permissão com.implacavel.alarme.permission.SONS, que é de assinatura: só apps assinados com a mesma
-// chave deste. O Maverick lista, toca, adiciona e apaga:
+// chave deste. O Mistral lista, toca, adiciona e apaga:
 //   content://com.implacavel.alarme.sons            lista (colunas nome, tamanho)
 //   content://com.implacavel.alarme.sons/som/NOME   abrir pra ler ("r") e apagar
 //   content://com.implacavel.alarme.sons/novo/NOME  abrir pra gravar ("w"): ao fechar, vira um som da biblioteca
 // Só nomes que já estão na lista são lidos ou apagados: nada de caminho vindo de fora. Um som em uso (o padrão, o de um
 // alarme ou o que está tocando agora) não é apagado daqui: o alarme da manhã nunca perde a música por um clique no outro
-// app (revisão, 10-31). Um envio que falhou no meio não entra (o Maverick fecha com erro).
+// app (revisão, 10-31). Um envio que falhou no meio não entra (o Mistral fecha com erro).
 package com.implacavel.alarme
 
 import android.content.ContentProvider
@@ -46,7 +46,7 @@ class FonteDeSons : ContentProvider() {
             }
             tipo == "novo" && mode.startsWith("w") -> {
                 val temporario = Sons.temporario(context!!)
-                // Quando o Maverick fecha o arquivo: deu certo, entra na biblioteca; deu erro, vai fora
+                // Quando o Mistral fecha o arquivo: deu certo, entra na biblioteca; deu erro, vai fora
                 ParcelFileDescriptor.open(
                     temporario,
                     ParcelFileDescriptor.MODE_WRITE_ONLY or ParcelFileDescriptor.MODE_TRUNCATE,
@@ -55,7 +55,7 @@ class FonteDeSons : ContentProvider() {
                     if (erro == null) {
                         Sons.receber(temporario, nome)
                     } else {
-                        Log.w(TAG, "Sons: o Maverick não terminou de mandar $nome", erro)
+                        Log.w(TAG, "Sons: o Mistral não terminou de mandar $nome", erro)
                         temporario.delete()
                     }
                 }
@@ -75,7 +75,7 @@ class FonteDeSons : ContentProvider() {
                 Ajustes.emAndamento?.musica == Uri.fromFile(som.arquivo).toString()
         }.getOrDefault(true)
         if (emUso) {
-            Log.i(TAG, "Sons: o Maverick quis apagar $nome, mas está em uso num alarme")
+            Log.i(TAG, "Sons: o Mistral quis apagar $nome, mas está em uso num alarme")
             return 0
         }
         Sons.remover(nome)

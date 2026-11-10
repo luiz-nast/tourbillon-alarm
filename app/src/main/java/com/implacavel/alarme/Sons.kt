@@ -3,7 +3,7 @@
 // dele. Cada alarme escolhe o seu ([Alarme.som], o nome do arquivo na biblioteca); sem escolha, vale o padrão
 // ([Sons.padrao]); sem padrão, o toque de alarme do celular (Sirene). A pasta é protegida (como os alarmes): dá pra
 // ler antes do primeiro desbloqueio, então depois de um reinício a música toca, e não o toque do sistema.
-// O app não traz música nenhuma: a biblioteca começa vazia. O Maverick Truck usa a mesma biblioteca (FonteDeSons): toca
+// O app não traz música nenhuma: a biblioteca começa vazia. O Mistral usa a mesma biblioteca (FonteDeSons): toca
 // os sons na tela de bloqueio dele e também adiciona e apaga (o dono, 10-31).
 //
 // Pelo cabo, no app de depuração (veja o README):
@@ -44,7 +44,7 @@ object Sons {
         if (::pasta.isInitialized) return
         pasta = ctx.createDeviceProtectedStorageContext().getDir("sons", Context.MODE_PRIVATE)
         prefs = ctx.prefsProtegidas("sons")
-        // Sobras de um envio do Maverick que o app não terminou de receber (morreu no meio)
+        // Sobras de um envio do Mistral que o app não terminou de receber (morreu no meio)
         ctx.createDeviceProtectedStorageContext().cacheDir.listFiles { f -> f.name.startsWith("chegando") }?.forEach { it.delete() }
         _padrao.value = prefs.getString("padrao", null)
         reler()
@@ -79,7 +79,7 @@ object Sons {
     }
 
     /**
-     * Um som que chegou de fora (o Maverick Truck, pela [FonteDeSons]), já gravado em [temporario] na mesma partição:
+     * Um som que chegou de fora (o Mistral, pela [FonteDeSons]), já gravado em [temporario] na mesma partição:
      * vira um som da biblioteca com o [nomeOriginal] (seguro, sem repetir). Vazio, é jogado fora.
      */
     @Synchronized
@@ -95,7 +95,7 @@ object Sons {
             Log.w(TAG, "Sons: não deu pra guardar o som que chegou: $nome")
             return null
         }
-        Log.i(TAG, "Sons: chegou do Maverick: $nome (${destino.length() / 1024} KB)")
+        Log.i(TAG, "Sons: chegou do Mistral: $nome (${destino.length() / 1024} KB)")
         reler()
         return Som(nome, destino)
     }

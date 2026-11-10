@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- A biblioteca de sons é dividida com o Maverick Truck (FonteDeSons): só apps assinados com a mesma chave entram.
-         O Maverick declara a mesma permissão, então tanto faz qual dos dois é instalado primeiro -->
+    <!-- A biblioteca de sons é dividida com o Mistral (FonteDeSons): só apps assinados com a mesma chave entram.
+         O Mistral declara a mesma permissão, então tanto faz qual dos dois é instalado primeiro -->
     <permission
         android:name="com.implacavel.alarme.permission.SONS"
         android:protectionLevel="signature" />
@@ -187,7 +187,7 @@
             android:exported="true"
             android:permission="com.implacavel.alarme.permission.SONS" />
 
-        <!-- O modo da manhã pro Maverick Truck (FonteDoModo): só leitura, com a mesma permissão de assinatura dos sons -->
+        <!-- O modo da manhã pro Mistral (FonteDoModo): só leitura, com a mesma permissão de assinatura dos sons -->
         <provider
             android:name=".FonteDoModo"
             android:authorities="com.implacavel.alarme.modo"

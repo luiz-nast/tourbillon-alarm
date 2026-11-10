@@ -92,7 +92,7 @@ private val Noite = darkColorScheme(
 )
 
 /**
- * Escala única dos apps do dono (Tourbillon, Chiron e Maverick, 11-07): mudar uma medida é mudar uma linha aqui.
+ * Escala única dos apps do dono (Tourbillon, Chiron e Mistral, 11-07): mudar uma medida é mudar uma linha aqui.
  * Título de tela 28, de diálogo 22, de cartão 18; corpo 16, secundário 14, legenda 12; rótulo de seção 13 em negrito.
  */
 private val base = Typography()
