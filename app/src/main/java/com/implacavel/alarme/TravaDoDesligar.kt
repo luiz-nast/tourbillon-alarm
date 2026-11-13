@@ -3,13 +3,17 @@
 // e uma licença KPE. Tudo só pelo cabo (permissão DUMP, como o PararPeloCabo); a chave nunca vai pro repo nem pro log:
 //   adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es chave <chave KPE>
 //   adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es comando liberar     (ou travar)
+//   adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es comando sair        (libera e deixa de ser admin)
+// O "sair" é a saída de emergência pelo cabo: o `dpm remove-active-admin` só remove admin de teste (android:testOnly).
 // Não há botão de liberar na tela: o app é contra a autossabotagem.
 //   adb logcat -s Implacavel
 // Fora da Samsung, sem licença ou sem administrador, a chamada falha, o log conta e o app segue.
 // Veja docs/analise-desligamento.md.
 package com.implacavel.alarme
 
+import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -23,11 +27,18 @@ object TravaDoDesligar {
         Result.failure((e as? InvocationTargetException)?.targetException ?: e)
     }
 
-    /** O que o cabo pediu: travar (o Knox recebe false, não deixa desligar), liberar (true) ou nada. */
+    /** O que o cabo pediu: travar (o Knox recebe false, não deixa desligar), liberar ou sair (true) ou nada. */
     fun permitir(comando: String?): Boolean? = when (comando) {
         "travar" -> false
-        "liberar" -> true
+        "liberar", "sair" -> true
         else -> null
+    }
+
+    /** O próprio app deixa de ser administrador (depois de liberar: o Modo Manutenção só volta com o liberar). */
+    fun sair(ctx: Context) {
+        tentar { ctx.getSystemService(DevicePolicyManager::class.java).removeActiveAdmin(ComponentName(ctx, AdminDoAlarme::class.java)) }
+            .onSuccess { Log.w(TAG, "Knox: o app deixou de ser administrador") }
+            .onFailure { Log.w(TAG, "Knox: sair falhou (${it.javaClass.simpleName}: ${it.message})") }
     }
 
     private val restricoes get() = Class.forName("com.samsung.android.knox.restriction.RestrictionPolicy")
@@ -65,9 +76,11 @@ object TravaDoDesligar {
 class TravaPeloCabo : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         intent.getStringExtra("chave")?.let { TravaDoDesligar.ativarLicenca(ctx, it) }
-        TravaDoDesligar.permitir(intent.getStringExtra("comando"))?.let {
+        val comando = intent.getStringExtra("comando")
+        TravaDoDesligar.permitir(comando)?.let {
             Log.w(TAG, "Knox: ${if (it) "liberar" else "travar"} o desligar -> ${TravaDoDesligar.permitirDesligar(ctx, it)}")
         }
+        if (comando == "sair") TravaDoDesligar.sair(ctx)
         Log.w(TAG, "Knox: desligar permitido = ${TravaDoDesligar.desligarPermitido(ctx) ?: "sem resposta"}")
     }
 }

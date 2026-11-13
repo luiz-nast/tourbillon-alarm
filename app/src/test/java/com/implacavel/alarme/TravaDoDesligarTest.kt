@@ -15,6 +15,9 @@ class TravaDoDesligarTest {
     fun liberarDeixaDesligar() = assertEquals(true, TravaDoDesligar.permitir("liberar"))
 
     @Test
+    fun sairLiberaAntes() = assertEquals(true, TravaDoDesligar.permitir("sair"))
+
+    @Test
     fun semComandoOuDesconhecidoNaoMexe() {
         assertNull(TravaDoDesligar.permitir(null))
         assertNull(TravaDoDesligar.permitir("TRAVAR"))
