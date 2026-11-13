@@ -154,7 +154,42 @@ O "celular longe" se simula desligando o Bluetooth **do relógio** por alguns mi
 
 ### Testes
 
-A preencher.
+Rodados em 13/11/2026, entre 08:57 e 09:01, pelo cabo. **O relógio não apareceu no `adb devices`** (`adb mdns services` vazio). O PC está no hotspot do celular (10.121.20.x). Por isso só a parte do celular foi testada. Os passos do relógio **não rodaram** e nada foi mexido nele (o Bluetooth dele continua como estava).
+
+**Testes JVM** (`./gradlew --no-build-cache cleanTestDebugUnitTest testDebugUnitTest assembleRelease`, com o `flock`; os três passaram):
+
+| Repo | Testes | Resultado |
+|---|---|---|
+| Veyron | 286 em 18 classes | passou (0 falhas, 0 erros) |
+| Chiron | 329 em 25 classes | passou (0 falhas, 0 erros, 1 ignorado) |
+| Turbilhão | 114 em 10 classes | passou (0 falhas, 0 erros) |
+
+Os APK release do Chiron e do Turbilhão têm a mesma chave (`Android Debug`, SHA-256 `b2bc0299…`) dos instalados no celular, então o `install -r` mantém os dados. O do Veyron tem essa mesma chave; a do Veyron que está no relógio não foi conferida.
+
+**No celular (feito):**
+
+| Passo | Resultado | Prova |
+|---|---|---|
+| 0. Antes | **ok** | `dumpsys alarm`: próximo toque do Chiron hoje 18:30 (a SINCRONIZAR das 09:14 não toca) e do Turbilhão 14/11 04:45, nenhum nos 30 min seguintes. `dumpsys activity services`: sem `AlarmeService` nem `AvisoService`. Backup dos APKs em `backup-apk/2026-11-13/`: `celular-chiron-0857.apk` (3 339 715 bytes) e `celular-turbilhao-0857.apk` (43 321 897 bytes). O Veyron do relógio **não foi guardado** (relógio fora do adb) |
+| 2. Chiron (celular) | **ok** | `install -r` deu `Success` (08:59:15). Log do Chiron: `Avisos agendados: 60 futuros, 0 atrasados`. Sem nenhum `Veyron: … não chegou ao relógio`. O toque mais cedo do `LembreteReceiver` é **13/11 18:30:00**: é a hora que o relógio deve mostrar |
+| 3. Turbilhão (celular) | **ok** | `install -r` deu `Success`. `dumpsys activity broadcasts`: `MY_PACKAGE_REPLACED` às 09:00:05.831, e às 09:00:06.010 o `io.github.luiz_nast.chiron.routine.DESPERTADOR` vindo de `com.implacavel.alarme`, entregue ao `DespertadorReceiver` do Chiron em 8 ms (a permissão de assinatura `…permission.IA` valeu). `dumpsys alarm com.implacavel.alarme`: o `DISPARAR` de 14/11 04:45 voltou ao lugar depois da troca |
+
+**No relógio (não rodou, falta):**
+
+- 1. Veyron por `./instalar.sh <ip:porta>`. O APK release já está compilado (`Veyron/app/build/outputs/apk/release/app-release.apk`).
+- 2. (relógio) O log do Veyron dizer `espelho: N toques na cópia, armado para 18:30`.
+- 3. (relógio) O log contar o item `tourbillon-<id>` às 04:45.
+- 4. Celular perto: `TesteDoEspelho --ei segundos 20`, esperado `celular perto: quem toca é o eco`.
+- 5. Celular longe: Bluetooth do relógio desligado, `TesteDoEspelho`, a cobrança (a, b e c) e religar o Bluetooth.
+- Para destravar, o dono liga a depuração por Wi-Fi do relógio na rede do hotspot e roda `adb connect <ip:porta>`; as ordens acima valem como estão.
+
+**Estado agora:** o celular tem o Chiron e o Turbilhão novos e o relógio ainda tem o Veyron antigo. **O plano B não está ativo** até o Veyron novo entrar no relógio. O Chiron já manda a agenda (a cada mudança, a cada sincronia de 15 min e no boot), e o Veyron novo a pega na próxima.
+
+**Sem teste de qualquer jeito:**
+
+- O celular desligado de verdade. Só vira prova no próximo desligamento real.
+- A hora de dormir e o Não perturbe do relógio (a lacuna que consta em "Limites que ficam").
+- A missão viva: não há disparo silencioso pelo cabo. Fica "a conferir no próximo alarme real, só por log": no relógio, `tourbillon-missao` rearmado a cada minuto para +5 min.
 
 ### Limites que ficam
 
