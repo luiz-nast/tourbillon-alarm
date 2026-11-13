@@ -2,11 +2,25 @@ package com.implacavel.alarme
 
 import java.lang.reflect.InvocationTargetException
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** A chamada ao Knox por reflexão nunca derruba o app (TravaDoDesligar.kt). */
+/** Os comandos do cabo, e a chamada ao Knox por reflexão nunca derruba o app (TravaDoDesligar.kt). */
 class TravaDoDesligarTest {
+    @Test
+    fun travarNaoDeixaDesligar() = assertEquals(false, TravaDoDesligar.permitir("travar"))
+
+    @Test
+    fun liberarDeixaDesligar() = assertEquals(true, TravaDoDesligar.permitir("liberar"))
+
+    @Test
+    fun semComandoOuDesconhecidoNaoMexe() {
+        assertNull(TravaDoDesligar.permitir(null))
+        assertNull(TravaDoDesligar.permitir("TRAVAR"))
+        assertNull(TravaDoDesligar.permitir(""))
+    }
+
     @Test
     fun semOKnoxNaoLanca() {
         // Fora da Samsung (e aqui, no teste) as classes do Knox não existem

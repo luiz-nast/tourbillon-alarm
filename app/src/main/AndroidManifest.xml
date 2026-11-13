@@ -15,6 +15,8 @@
     <!-- O receiver do Chiron exige esta permissão de quem lhe conta o despertador (AvisoAoChiron) -->
     <uses-permission android:name="com.implacavel.alarme.permission.IA" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- A trava do desligar pelo Knox (allowPowerOff). Só vale com a licença KPE ativada. Veja TravaDoDesligar.kt -->
+    <uses-permission android:name="com.samsung.android.knox.permission.KNOX_HW_CONTROL" />
     <!-- Alarme no minuto exato. USE_EXACT_ALARM é concedida na instalação (Android 13+);
          a Play Store só aceita em apps de despertador, mas aqui o APK é seu. -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
