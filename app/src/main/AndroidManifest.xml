@@ -170,6 +170,21 @@
             </intent-filter>
         </receiver>
 
+        <!-- A trava do desligar pelo Knox, só pelo cabo (permissão DUMP, como o PararPeloCabo). Veja TravaDoDesligar.kt -->
+        <receiver
+            android:name=".TravaPeloCabo"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
+
+        <!-- O resultado da licença do Knox, que ele manda só a este app (só vira uma linha no log) -->
+        <receiver
+            android:name=".LicencaDoKnox"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.samsung.android.knox.intent.action.KNOX_LICENSE_STATUS" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".AlarmeReceiver"
             android:directBootAware="true"
