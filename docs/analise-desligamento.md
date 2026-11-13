@@ -164,6 +164,21 @@ Rodados em 13/11/2026, entre 08:57 e 09:01, pelo cabo. **O relógio não aparece
 | Chiron | 329 em 25 classes | passou (0 falhas, 0 erros, 1 ignorado) |
 | Turbilhão | 114 em 10 classes | passou (0 falhas, 0 erros) |
 
+**Revisão (13/11, 09:05 a 09:10, sem adb).** Dois consertos, cada um com teste:
+
+- **Veyron `0cae9da`:** o espelho tocava de novo um toque que já tinha tocado. Bastava o próximo vencer menos de 2 min depois (o Turbilhão às 4h45 e um lembrete às 4h46, ou a cobrança do `TesteDoEspelho`). A vez 0 sempre toca, mesmo já resolvida no relógio. Agora o espelho guarda a hora do último toque tratado.
+- **Chiron `c7d9ed8`:** com o celular desligado, o despertador e a missão do Turbilhão tocavam no relógio 45 s uma vez só e calavam. Agora vão com 5 cobranças, de 10 em 10 min, que o relógio só toca se o toque ainda está na tela.
+
+Depois dos consertos (`cleanTestDebugUnitTest testDebugUnitTest`, com o `flock`):
+
+| Repo | Testes | Resultado |
+|---|---|---|
+| Veyron | 287 em 18 classes | passou (0 falhas, 0 erros) |
+| Chiron | 330 em 25 classes | passou (0 falhas, 0 erros, 1 ignorado) |
+| Turbilhão | 114 em 10 classes | passou (0 falhas, 0 erros), sem mudança de código |
+
+Os APK release do Veyron (09:08) e do Chiron (09:09) foram recompilados com os consertos, com a mesma chave (`b2bc0299…`). **O Chiron do celular é o das 08:59, sem o conserto das cobranças:** falta reinstalá-lo pelo cabo, com as mesmas regras do passo 0.
+
 Os APK release do Chiron e do Turbilhão têm a mesma chave (`Android Debug`, SHA-256 `b2bc0299…`) dos instalados no celular, então o `install -r` mantém os dados. O do Veyron tem essa mesma chave; a do Veyron que está no relógio não foi conferida.
 
 **No celular (feito):**
