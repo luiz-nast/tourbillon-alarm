@@ -6,7 +6,7 @@
 |---|---|
 | 1. Tirar o Knox | **Feito.** O celular voltou ao cabo às 13:58. A saída (`sair`) rodou às 13:59, e o administrador saiu (prova abaixo). Só então o código saiu da `main` (`9aedf79` e `9a6d9b2`), e o Turbilhão sem o Knox foi instalado às 13:59. |
 | 2. Relógio implacável | **Feito e no GitHub** (Veyron, Chiron e Turbilhão). |
-| 3. Instalar e testar no relógio | **O relógio real não apareceu no adb.** Plano B: 7 testes no relógio virtual, todos passaram. Os 3 testes ao vivo pedidos não rodaram. |
+| 3. Instalar e testar no relógio | **Veyron instalado no relógio real às 16:49** (pelo hotspot do celular, porque a Wi-Fi do trabalho bloqueia a conversa entre aparelhos). A agenda nova chegou. Antes disso, 8 testes no relógio virtual passaram. Os 3 testes ao vivo pedidos não rodaram: o primeiro teste real é o despertador de 14/11 às 04:45. |
 
 **Commits, todos na `main` e com push:** Veyron `076d952`, `1aabbed`, `a4e162d` e `6d141c7`; Chiron `8d59e4a`; Turbilhão `ab67854`, `b2bbaa9` (este relatório), `9aedf79` (tira o código do Knox), `9a6d9b2` (docs) e a atualização deste relatório.
 
@@ -85,15 +85,16 @@ Para fazer quando os dois voltarem:
 
 ## O Veyron no relógio
 
-**Não entrou.** O APK está pronto (`Veyron/app/build/outputs/apk/release/app-release.apk`).
-
-O que falta do teu lado:
-1. Põe o relógio e o PC na mesma rede Wi-Fi.
-2. No relógio, deixa a "Depuração por Wi-Fi" ligada em Opções do desenvolvedor.
-
-A partir daí, eu conecto, instalo e testo.
-
-**Atenção:** o celular já tem o Turbilhão e o Chiron novos, mas o relógio ainda tem o Veyron antigo, sem o espelho. Até o Veyron novo entrar no relógio, o relógio não toca sozinho.
+**Instalado às 16:49 de 13/11** no Galaxy Watch7 (SM-L315F, Wear OS SDK 36), com o `instalar.sh` (release `6d141c7`).
+- **Antes de instalar:** o relógio estava calado e carregando (64%). O Veyron antigo (de 10/11) está guardado em `backup-apk/2026-11-13/relogio-veyron-1648.apk`.
+- **Conexão:** a Wi-Fi do trabalho ("GDFNet - Corporativo") anuncia o relógio, mas bloqueia a conversa entre aparelhos (o ping falha e o ARP também). Por isso PC e relógio foram para o hotspot do celular, e depois o PC voltou à rede do trabalho.
+- **A agenda chegou:**
+  - A sincronia do Chiron falhou (`Unable to resolve host`): ele estava em "Otimizado" com a Economia de bateria ligada, e essa é a pendência da bateria.
+  - Então reinstalei o mesmo APK do Turbilhão. Ele avisou o despertador ao Chiron às 16:50:02.
+  - Às 16:50:05, o log do relógio mostrou `espelho: 61 toques na cópia, armado para 18:30`: os 60 lembretes e o despertador de 14/11 às 04:45. A agenda veio do Chiron novo (revisão 2), então o modo implacável está ligado.
+- **Testes ao vivo:** não rodaram. O dono estava no trabalho, e um despertador do Turbilhão de verdade toca alto e pede a missão inteira.
+  - O primeiro teste real é o despertador de 14/11 às 04:45, com o celular perto: o relógio deve acompanhar, e a missão concluída deve fechar os dois. O log do relógio vai mostrar `implacável: toca tourbillon-… (ACOMPANHA, …)` e o fim.
+  - Os testes 2 e 3 (o Bluetooth do celular desligado e religado) ficam para um dia em casa.
 
 ## O despertador de 14/11 às 04:45
 
