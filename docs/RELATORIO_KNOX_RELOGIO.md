@@ -4,13 +4,11 @@
 
 | Frente | Estado |
 |---|---|
-| 1. Tirar o Knox | **Código pronto, mas não aplicado.** O celular não apareceu no adb (das 12:01 em diante), então a saída pelo cabo (`sair`) não rodou. Pela regra da missão, o código não sai da `main` com o administrador ativo. A remoção está no branch `knox-fora`, testada e no GitHub. |
+| 1. Tirar o Knox | **Feito.** O celular voltou ao cabo às 13:58. A saída (`sair`) rodou às 13:59, e o administrador saiu (prova abaixo). Só então o código saiu da `main` (`9aedf79` e `9a6d9b2`), e o Turbilhão sem o Knox foi instalado às 13:59. |
 | 2. Relógio implacável | **Feito e no GitHub** (Veyron, Chiron e Turbilhão). |
 | 3. Instalar e testar no relógio | **O relógio real não apareceu no adb.** Plano B: 7 testes no relógio virtual, todos passaram. Os 3 testes ao vivo pedidos não rodaram. |
 
-**Commits:**
-- 6 commits na `main`, todos com push: Veyron `076d952`, `1aabbed` e `a4e162d`; Chiron `8d59e4a`; Turbilhão `ab67854` e o deste relatório.
-- 2 commits no branch `knox-fora` do Turbilhão, com push: `88d058a` (tira o código) e `2e4c854` (docs).
+**Commits, todos na `main` e com push:** Veyron `076d952`, `1aabbed` e `a4e162d`; Chiron `8d59e4a`; Turbilhão `ab67854`, `b2bbaa9` (este relatório), `9aedf79` (tira o código do Knox), `9a6d9b2` (docs) e a atualização deste relatório.
 
 ## O que foi feito
 
@@ -22,17 +20,25 @@
   - **Lembretes comuns:** iguais a antes.
 - **Chiron:** a agenda leva ao relógio o estado do Turbilhão (última batida, prazo, missão concluída). O despertador vai sem as 5 cobranças antigas.
 - **Turbilhão:** se o celular estava desligado na hora do despertador, ele toca o despertador perdido quando o celular volta (até 12 h). É essa batida que cala o relógio.
-- **Knox** (branch `knox-fora`): saem o administrador, a licença, os comandos `travar`, `liberar` e `sair`, o `device_admin.xml` e os receivers. A doc registra por que foi descartado (a chave KPE só sai para empresa aprovada).
+- **Knox:** saem o administrador, a licença, os comandos `travar`, `liberar` e `sair`, o `device_admin.xml` e os receivers. A doc registra por que foi descartado (a chave KPE só sai para empresa aprovada).
 
 ## A prova de que o administrador saiu
 
-**Ainda não existe.** O celular está fora do adb. O último estado visto, às 10:58, foi o administrador ativo, nada travado e `powerOffAllowed: true`.
+- **13:59:11, antes:** o `dumpsys device_policy` lista três administradores: o Knox Guard (`com.samsung.android.kgclient`), o Alarmy (`droom.sleepIfUCan`) e o `com.implacavel.alarme/.AdminDoAlarme`. O `dumpsys restriction_policy` diz `powerOffAllowed: true`, e nenhum alarme estava tocando.
+- **13:59:17:** `adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es comando sair`. Log:
 
-Quando o celular voltar ao cabo, nesta ordem:
-1. Rodar o `TravaPeloCabo --es comando sair` com o Turbilhão que já está instalado.
-2. Conferir no `dumpsys device_policy` que o `AdminDoAlarme` sumiu.
-3. Juntar o `knox-fora` à `main`, rodar os testes e dar push.
-4. Instalar o Turbilhão e o Chiron novos e conferir o despertador.
+  ```
+  13:59:26.186 Knox: allowPowerOff(true) falhou (SecurityException: Admin  does not have com.samsung.android.knox.permission.KNOX_HW_CONTROL)
+  13:59:26.201 Knox: o app deixou de ser administrador
+  13:59:26.202 Knox: desligar permitido = true
+  ```
+
+  O `liberar` falhar era esperado: a licença nunca foi ativada, então nada estava travado.
+- **Depois:** o `dumpsys device_policy` lista só o Knox Guard e o Alarmy. `powerOffAllowed: true`.
+- **13:59:58:** depois disso, o código do Knox saiu da `main`, e foram instalados o Turbilhão `9a6d9b2` e o Chiron `8d59e4a` (os dois `Success`).
+  - O APK do Turbilhão não tem mais nenhuma permissão do Knox.
+  - O Chiron logou `Avisos agendados: 60 futuros, 0 atrasados`.
+  - Os APKs de antes estão em `backup-apk/2026-11-13/celular-*-1359.apk`.
 
 ## Testes JVM (antes × depois)
 
@@ -40,8 +46,7 @@ Quando o celular voltar ao cabo, nesta ordem:
 |---|---|---|---|
 | Veyron | 287 | 315 | 0 |
 | Chiron | 330 (1 ignorado) | 335 (1 ignorado) | 0 |
-| Turbilhão, `main` | 122 | 129 | 0 |
-| Turbilhão, `knox-fora` | — | 121: saem os 8 testes do Knox junto com o código | 0 |
+| Turbilhão | 122 | 121: entram 7 do despertador perdido e saem os 8 do Knox, junto com o código dele | 0 |
 
 Nenhum teste se perdeu fora isso. No Chiron, o teste das 5 cobranças virou o teste "o despertador vai só com a vez 0".
 
@@ -86,13 +91,12 @@ O que falta do teu lado:
 
 A partir daí, eu conecto, instalo e testo.
 
-**Atenção:** até os três apps novos entrarem nos aparelhos, nada disto protege. O celular tem o Turbilhão `6f916b4` e o Chiron `c7d9ed8`, e o relógio tem o Veyron antigo, sem o espelho.
+**Atenção:** o celular já tem o Turbilhão e o Chiron novos, mas o relógio ainda tem o Veyron antigo, sem o espelho. Até o Veyron novo entrar no relógio, o relógio não toca sozinho.
 
 ## O despertador de 14/11 às 04:45
 
-- **Visto armado pela última vez às 10:58** (`dumpsys alarm`: `DISPARAR` de 2026-11-14 04:45:00).
-- Nada foi instalado no celular desde então, porque ele saiu do adb. Não foi possível conferir de novo.
-- Nenhum alarme de teste ficou pendente no celular. No relógio virtual, todos os testes terminaram calados.
+- **Armado:** às 13:59:58, depois da instalação do Turbilhão novo, o `dumpsys alarm` mostra o `DISPARAR` de 2026-11-14 04:45:00.
+- **Nenhum alarme de teste pendente no celular.** No relógio virtual, todos os testes terminaram calados.
 
 ## Dois lembretes para ti
 
