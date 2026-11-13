@@ -46,7 +46,7 @@ Achados de apoio:
 | Device Owner + lock task sem `LOCK_TASK_FEATURE_GLOBAL_ACTIONS` | Sim, mas **só enquanto a tela está fixada**. O celular vira quiosque à noite | Grátis | Não | Desconhecido (é o mesmo Device Owner) |
 | Restrições `DISALLOW_*` (Device Owner) | Nenhuma trata de desligar. `DISALLOW_SAFE_BOOT` só fecha o modo de segurança | Grátis | Não | Desconhecido |
 | Fixar tela sem Device Owner | Não: o usuário sai sozinho | Grátis | Não | Nenhum |
-| **Knox `RestrictionPolicy.allowPowerOff(false)`** (app como administrador do aparelho + licença KPE) | **Provável pela doc**: bloqueia a tecla, o painel rápido e o reset de fábrica, e vale desde o boot. Não está na lista do que o Android 15+ tira do modo administrador. **Nunca testado no One UI 8** | Grátis: KPE Premium grátis, 2 anos por ativação. Pede conta no portal Knox | Não | **Desconhecido**: o administrador ativo é visível a qualquer app |
+| **Knox `RestrictionPolicy.allowPowerOff(false)`** (app como administrador do aparelho + licença KPE) | **Em teste desde 13/11 (seção 7).** Pela doc, bloqueia a tecla, o painel rápido e o reset de fábrica, e vale desde o boot. A lista oficial de 20/10/2025 ainda o deixa no modo administrador. O código está pronto; falta a prova no aparelho | Grátis: KPE Premium grátis, 2 anos por ativação. Pede conta no portal Knox | Não | **Desconhecido, em teste**: o Alarmy (da Play) já é administrador ativo e o Nubank convive com ele |
 | Knox Manage / Knox Suite (MDM da Samsung) | Sim | **Pago**: US$ 30 a 52,50 por aparelho por ano | Não | Desconhecido |
 | "Bloquear rede e segurança" (One UI) | Parcial: com a tela bloqueada, desligar pede o PIN. Desbloqueado, não pede nada. É atrito, não trava | Grátis | Não | Nenhum |
 | Desligar o despertar por voz do Bixby | Fecha um caminho (o provável das 06:00) | Grátis | Não | Nenhum |
@@ -89,13 +89,7 @@ Mitigação de todos: o Plano B no relógio. Para a bateria, também o celular n
 2. **Passos do dono, sem risco** (na lista no fim): desligar o despertar por voz do Bixby, ligar "Bloquear rede e segurança", tirar o Chiron da economia de bateria, dormir com o relógio no pulso e carregado e com o celular no carregador.
 
 3. **O que fica de fora, e por quê:**
-   - **Knox `allowPowerOff`.** É o único bloqueio real sem root, mas não entra agora, por quatro motivos:
-     - o risco no Nubank é desconhecido, e testar pode custar um bloqueio, que é justamente a regra do dono;
-     - depende de conta e chave Knox que só o dono pode criar;
-     - nunca foi testado no One UI 8;
-     - a chave e o `knoxsdk.jar` não podem ir para este repositório público.
-
-     Se o dono decidir tentar, são cerca de 40 linhas: um `DeviceAdminReceiver` e a chamada ao Knox por reflexão, sem o jar. Isso só depois do espelho pronto, e num dia em que ele aceite o risco no Nubank.
+   - **Knox `allowPowerOff`: saiu daqui, está em teste desde 13/11** (seção 7). O dono decidiu tentar e aceitou o risco no Nubank, com um teste do Nubank antes de qualquer trava. O espelho continua valendo: o Knox não segura os casos da seção 3.
    - **Device Owner com lock task.** Custa tirar todas as contas, deixa o celular em quiosque à noite, o risco no Nubank é desconhecido e só sai com reset de fábrica.
    - **A acessibilidade.** Já falhou no One UI 8, e o Nubank bloqueou.
    - **O Chiron esperar o Turbilhão** continua como está. Enquanto o Turbilhão toca, o dono está sendo acordado. Se o celular sumir, a hora adiada já vai na agenda do relógio.
@@ -107,9 +101,10 @@ Mitigação de todos: o Plano B no relógio. Para a bateria, também o celular n
 - O que o bloqueou, medido em outubro, foi a acessibilidade de um app instalado fora da Play: o nosso `VigiaDoDesligar`.
 - O Nubank não publica quais sinais olha. Root tem relato público de bloqueio. Para administrador do aparelho e Device Owner não há fonte nenhuma.
 
-**A solução escolhida não muda nada para o Nubank:**
-- não acrescenta acessibilidade, sobreposição, administrador, Device Owner nem root;
-- o Turbilhão continua sem nenhum deles.
+**O espelho não muda nada para o Nubank:**
+- não acrescenta acessibilidade, sobreposição, administrador, Device Owner nem root.
+
+**O Knox em teste (seção 7) muda uma coisa:** o Turbilhão vira administrador do aparelho, por decisão do dono. Por isso o Nubank é testado antes de qualquer trava.
 
 **Canais oficiais, se um dia o app neste celular parar:**
 - **O app em outro aparelho.** Um Android antigo, de fábrica, sem root e sem Device Owner, autorizado pelo próprio app. É o caminho recomendado se o dono adotar o Knox ou o Device Owner um dia.
@@ -215,6 +210,68 @@ Os APK release do Chiron e do Turbilhão têm a mesma chave (`Android Debug`, SH
 - Suposição: antes do primeiro desbloqueio depois de um boot, o Play Services pode não falar com o relógio. Nesse caso vale a última agenda que ele recebeu.
 - Falta medir se o alarme do relógio passa no modo hora de dormir e no Não perturbe do relógio.
 
+## 7. Knox em teste (desde 13/11)
+
+**Decisão do dono (13/11):** tentar a trava do Knox, aceitando o risco no Nubank, com um teste do Nubank **antes** de qualquer trava.
+
+### A doc confere (13/11, 09:55)
+
+- A lista oficial dos métodos tirados do modo administrador no Android 15+ (atualizada em 20/10/2025, já com o Android 16 lançado) **não tem o `allowPowerOff` nem a licença**. Pela matriz da mesma página, os outros métodos continuam acessíveis no modo administrador.
+- Em 06/2024, a Samsung avisou que planeja estender a restrição aos poucos a todos os métodos, nas versões seguintes do Android. Até a lista de 10/2025, isso não aconteceu com o `allowPowerOff`. A prova final é o aparelho (passo 5).
+- O `allowPowerOff` pede a permissão `com.samsung.android.knox.permission.KNOX_HW_CONTROL`, e não a `KNOX_RESTRICTION_MGMT`.
+  - Ele trava a tecla lateral, o desligar do painel rápido e o reset de fábrica.
+  - Com a trava, aparece o aviso "Security policy prevents power off".
+  - Com vários administradores, basta um travar.
+- O resultado da licença chega na ação `com.samsung.android.knox.intent.action.KNOX_LICENSE_STATUS` (com `KNOX_`), com o código em `com.samsung.android.knox.intent.extra.KNOX_LICENSE_ERROR_CODE` (0 = sucesso).
+
+### O código
+
+| Commit | O que faz |
+|---|---|
+| `132bffe` (K1) | `AdminDoAlarme`: administrador do aparelho sem nenhuma política (`res/xml/device_admin.xml`) |
+| `d79bf11` (K2) | `TravaDoDesligar.ativarLicenca`, por reflexão, sem o `knoxsdk.jar`. O `TravaPeloCabo` (permissão `DUMP`, só o adb) recebe a chave. O `LicencaDoKnox` loga só o código do resultado. A chave não fica guardada no app: o app tem `allowBackup`, e as `SharedPreferences` iriam para o backup do Google. Para ativar de novo, ela vem de novo pelo cabo |
+| `6ed7ec2` (K3) | `travar` e `liberar` (`allowPowerOff`), a permissão `KNOX_HW_CONTROL`, e o estado (`isPowerOffAllowed`) no log depois de cada pedido. Não há botão na tela. Se a reflexão falhar, só loga |
+
+Testes JVM (`./gradlew testDebugUnitTest assembleRelease`, com o `flock`): **121 testes, 0 falhas** (7 novos em `TravaDoDesligarTest`: os comandos e o erro que nunca lança).
+
+Comandos, só pelo cabo (o log sai em `adb logcat -s Implacavel`, nas linhas `Knox: …`):
+
+```
+adb shell dpm set-active-admin com.implacavel.alarme/.AdminDoAlarme       # passo do dono
+adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es chave <chave KPE>
+adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es comando liberar
+adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es comando travar
+adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo             # só pergunta o estado
+adb shell dpm remove-active-admin com.implacavel.alarme/.AdminDoAlarme    # saída de emergência
+```
+
+### No aparelho
+
+| Passo | Resultado | Prova |
+|---|---|---|
+| 0. Antes | **ok** | 10:03: nenhum `AlarmeService`. Próximo toque do Chiron hoje às 18:30, do Turbilhão 14/11 às 04:45. Backup em `backup-apk/2026-11-13/celular-turbilhao-1004.apk` (43 321 973 bytes) |
+| 1. Instalar o Turbilhão | **ok** | `install -r` deu `Success` (10:04:02). O `DISPARAR` de 14/11 04:45 voltou ao lugar e o Chiron foi avisado (`DESPERTADOR`, 10:04:03). O `AdminDoAlarme` aparece no sistema, inativo |
+| 1b. Reflexão sem administrador (não muda nada) | **ok** | `desligar permitido = true`: as classes do Knox existem no One UI 8. O `liberar` deu `SecurityException: No active admin owned by uid 10143`, foi para o log e o app continuou vivo |
+| 2. Ativar o administrador | **falta: passo do dono** | Mudar a segurança do celular é passo do dono, não meu |
+| 3. Nubank com o administrador ativo, por pelo menos 1 dia | falta | Se o Nubank bloquear: `dpm remove-active-admin`, registrar aqui, e o Knox acaba |
+| 4 a 9. Licença, `liberar`, `travar`, testes de desligar, saída de emergência | só numa sessão seguinte | Quando o dono disser que o Nubank passou e mandar a chave KPE |
+
+### O Nubank e o administrador
+
+- **Antes desta mudança, o celular já tinha dois administradores ativos:**
+  - o Knox Guard da Samsung (`com.samsung.android.kgclient`);
+  - o **Alarmy** (`droom.sleepIfUCan`, da Play, contexto `EDM ADMIN`).
+- O Nubank funciona com os dois.
+- A diferença: o Turbilhão vem pelo cabo, fora da Play. Foi esse o caso que o Nubank barrou em outubro, com a acessibilidade.
+
+### Efeitos do administrador
+
+- Enquanto ele está ativo, o Android não deixa desinstalar o Turbilhão sem desativá-lo antes. O `install -r` continua funcionando.
+- Com a trava, o reset de fábrica também fica travado.
+- **Saída de emergência:** desativar o administrador em Configurações (Segurança, Apps de administração do dispositivo) ou pelo `dpm remove-active-admin`.
+  - O app não pode se tornar não removível: o `setAdminRemovable(false)` está na lista tirada do modo administrador, e o código não o chama.
+  - Se desativar o administrador desfaz a trava, isso se confere no passo 9.
+
 ## Fontes
 
 - [AlarmManager: os alarmes somem quando o aparelho desliga](https://developer.android.com/reference/android/app/AlarmManager)
@@ -222,6 +279,8 @@ Os APK release do Chiron e do Turbilhão têm a mesma chave (`Android Debug`, SH
 - [AccessibilityService: ações globais](https://developer.android.com/reference/android/accessibilityservice/AccessibilityService)
 - [Knox RestrictionPolicy.allowPowerOff](https://docs.samsungknox.com/devref/knox-sdk/reference/com/samsung/android/knox/restriction/RestrictionPolicy.html)
 - [Knox: métodos tirados do modo administrador no Android 15+](https://docs.samsungknox.com/dev/knox-sdk/api-reference/restricted-api-methods/)
+- [Samsung Knox: "Upcoming changes to Knox SDK" (21/06/2024), o plano de estender a restrição](https://www.samsungknox.com/en/blog/changes-to-knox-sdk)
+- [Knox KnoxEnterpriseLicenseManager: activateLicense e KNOX_LICENSE_STATUS](https://docs.samsungknox.com/devref/knox-sdk/reference/com/samsung/android/knox/license/KnoxEnterpriseLicenseManager.html)
 - [Knox: licença KPE Premium grátis](https://docs.samsungknox.com/admin/knox-platform-for-enterprise/before-you-begin/knox-platform-for-enterprise-licenses/)
 - [Samsung: o alarme não toca com o aparelho desligado](https://www.samsung.com/ae/support/mobile-devices/will-the-alarm-turn-on-in-my-samsung-phone-or-tablet-if-the-device-is-turned-off)
 - [Samsung: reinício forçado](https://www.samsung.com/ph/support/mobile-devices/how-to-force-reboot-your-samsung-galaxy-smartphone/)
