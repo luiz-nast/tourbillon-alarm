@@ -46,7 +46,7 @@ Achados de apoio:
 | Device Owner + lock task sem `LOCK_TASK_FEATURE_GLOBAL_ACTIONS` | Sim, mas **só enquanto a tela está fixada**. O celular vira quiosque à noite | Grátis | Não | Desconhecido (é o mesmo Device Owner) |
 | Restrições `DISALLOW_*` (Device Owner) | Nenhuma trata de desligar. `DISALLOW_SAFE_BOOT` só fecha o modo de segurança | Grátis | Não | Desconhecido |
 | Fixar tela sem Device Owner | Não: o usuário sai sozinho | Grátis | Não | Nenhum |
-| **Knox `RestrictionPolicy.allowPowerOff(false)`** (app como administrador do aparelho + licença KPE) | **Em teste desde 13/11 (seção 7).** Pela doc, bloqueia a tecla, o painel rápido e o reset de fábrica. Se vale logo depois do boot, só o aparelho prova. A lista oficial de 20/10/2025 ainda o deixa no modo administrador. O código está pronto; falta a prova no aparelho | Grátis, 2 anos por ativação, **mas exige conta Knox de empresa aprovada**: o cadastro com e-mail pessoal (Gmail) é recusado (seção 7) | Não | **Desconhecido, em teste**: o Alarmy (da Play) já é administrador ativo e o Nubank convive com ele |
+| **Knox `RestrictionPolicy.allowPowerOff(false)`** (app como administrador do aparelho + licença KPE) | **Descartado em 13/11 (seção 7).** Pela doc e pelo firmware deste celular funcionaria no modo administrador, mas a chave KPE só sai para conta Knox de empresa aprovada | Grátis só para empresa: o cadastro com e-mail pessoal (Gmail) é recusado | Não | Desconhecido: o administrador ficou ativo a partir das 10:13 de 13/11, para o teste do Nubank, até a saída pelo cabo (relatório) |
 | Knox Manage / Knox Suite (MDM da Samsung) | Sim | **Pago**: US$ 30 a 52,50 por aparelho por ano | Não | Desconhecido |
 | "Bloquear rede e segurança" (One UI) | Parcial: com a tela bloqueada, desligar pede o PIN. Desbloqueado, não pede nada. É atrito, não trava | Grátis | Não | Nenhum |
 | Desligar o despertar por voz do Bixby | Fecha um caminho (o provável das 06:00) | Grátis | Não | Nenhum |
@@ -80,6 +80,7 @@ Mitigação de todos: o Plano B no relógio. Para a bateria, também o celular n
      - **celular perto:** o relógio não toca pelo espelho, porque o celular toca (e o eco de hoje continua);
      - **celular desligado ou longe:** o relógio toca sozinho, pelo mesmo caminho de alarme que já existe.
    - Na missão, se o celular sumir, o relógio toca em até 5 min: "a missão parou".
+   - **Desde 13/11, o relógio implacável** (`Veyron/docs/RELOGIO_IMPLACAVEL.md`): no despertador do Turbilhão, com o celular sumido, o relógio toca **sem parar**, sem botão, até o Chiron contar que o Turbilhão voltou (uma batida nova da missão, ou a missão concluída). Com o celular desligado na hora do despertador, o Turbilhão toca o despertador perdido quando o celular volta (até 12 h), e é essa batida que cala o relógio. Os lembretes comuns do Chiron não mudam.
 
    Por quê:
    - É a única opção que faz o alarme tocar em **todos** os casos da seção 3.
@@ -90,7 +91,7 @@ Mitigação de todos: o Plano B no relógio. Para a bateria, também o celular n
 2. **Passos do dono, sem risco** (na lista no fim): desligar o despertar por voz do Bixby, ligar "Bloquear rede e segurança", tirar o Chiron da economia de bateria, dormir com o relógio no pulso e carregado e com o celular no carregador.
 
 3. **O que fica de fora, e por quê:**
-   - **Knox `allowPowerOff`: saiu daqui, está em teste desde 13/11** (seção 7). O dono decidiu tentar e aceitou o risco no Nubank, com um teste do Nubank antes de qualquer trava. O espelho continua valendo: o Knox não segura os casos da seção 3.
+   - **Knox `allowPowerOff`: tentado e descartado em 13/11** (seção 7). A chave KPE só sai para conta Knox de empresa aprovada. O código foi tirado do Turbilhão, e a trava de verdade passou a ser o relógio implacável.
    - **Device Owner com lock task.** Custa tirar todas as contas, deixa o celular em quiosque à noite, o risco no Nubank é desconhecido e só sai com reset de fábrica.
    - **A acessibilidade.** Já falhou no One UI 8, e o Nubank bloqueou.
    - **O Chiron esperar o Turbilhão** continua como está. Enquanto o Turbilhão toca, o dono está sendo acordado. Se o celular sumir, a hora adiada já vai na agenda do relógio.
@@ -105,10 +106,10 @@ Mitigação de todos: o Plano B no relógio. Para a bateria, também o celular n
 **O espelho não muda nada para o Nubank:**
 - não acrescenta acessibilidade, sobreposição, administrador, Device Owner nem root.
 
-**O Knox em teste (seção 7) muda uma coisa:** o Turbilhão vira administrador do aparelho, por decisão do dono. Por isso o Nubank é testado antes de qualquer trava.
+**O Knox foi descartado (seção 7):** o Turbilhão deixou de ser administrador do aparelho e não tem mais o código do Knox.
 
 **Canais oficiais, se um dia o app neste celular parar:**
-- **O app em outro aparelho.** Um Android antigo, de fábrica, sem root e sem Device Owner, autorizado pelo próprio app. É o caminho recomendado se o dono adotar o Knox ou o Device Owner um dia.
+- **O app em outro aparelho.** Um Android antigo, de fábrica, sem root e sem Device Owner, autorizado pelo próprio app. É o caminho recomendado se o dono adotar o Device Owner um dia.
 - **O site para pessoa física não existe mais** desde setembro de 2024. Só a conta PJ tem acesso pelo navegador.
 - **Só para emergência:** a página "Me Roubaram" (`app.nubank.com.br/roubo/`), que bloqueia os cartões e desconecta os aparelhos, e o telefone 24h (4020 0185 nas capitais, 0800 591 2117 nas demais).
 - **O cartão físico** funciona sem o app.
@@ -211,140 +212,27 @@ Os APK release do Chiron e do Turbilhão têm a mesma chave (`Android Debug`, SH
 - Suposição: antes do primeiro desbloqueio depois de um boot, o Play Services pode não falar com o relógio. Nesse caso vale a última agenda que ele recebeu.
 - Falta medir se o alarme do relógio passa no modo hora de dormir e no Não perturbe do relógio.
 
-## 7. Knox em teste (desde 13/11)
+## 7. Knox: tentado e descartado (13/11)
 
-**Decisão do dono (13/11):** tentar a trava do Knox, aceitando o risco no Nubank, com um teste do Nubank **antes** de qualquer trava.
+**Decisão do dono (13/11, à tarde):** a trava do Knox sai. A defesa contra o desligamento passa a ser o relógio implacável (`Veyron/docs/RELOGIO_IMPLACAVEL.md`).
 
-### O bloqueio: a chave KPE (achado da revisão, 13/11)
-
-**A licença KPE é grátis, mas só sai para conta Knox de empresa aprovada.** Sem a chave, os passos 4 em diante não acontecem, e a trava nunca liga.
-
-- O cadastro no Knox com e-mail pessoal é recusado. A Samsung cita o `@gmail.com` ([KBA-1761](https://docs.samsungknox.com/admin/fundamentals/kbas/kba-1761-knox-account-application-rejected-after-samsung-account-for-business-approval/), 02/03/2026).
+**Por quê:** a licença KPE é grátis, mas só sai para conta Knox de empresa aprovada. Sem a chave, a trava nunca liga.
+- O cadastro no Knox com e-mail pessoal é recusado; a Samsung cita o `@gmail.com` ([KBA-1761](https://docs.samsungknox.com/admin/fundamentals/kbas/kba-1761-knox-account-application-rejected-after-samsung-account-for-business-approval/)).
 - Desde 03/2025, a página de chaves do Developer Portal só abre para "approved enterprise customers" ([KBA-1227](https://docs.samsungknox.com/dev/knox-sdk/kbas/kba-1227-license-keys-page-unavailable-from-the-knox-developer-portal)).
-- A conta de parceiro pede D-U-N-S, VAT ou registro de empresa, e a aprovação de um representante da Samsung ([cadastro de parceiro](https://docs.samsungknox.com/partner/knox-partner-program/get-started/all-partners/sign-up-for-a-partner-account/)).
-- Domínio próprio ou CNPJ custam dinheiro, e isso quebra a regra "nada pago". Chave de terceiros nunca.
-- Não testado: ninguém tentou o cadastro. A Samsung pode aprovar um caso à parte, mas a doc não mostra caminho para pessoa física.
+- Domínio próprio ou CNPJ custam dinheiro, e isso quebra a regra "nada pago".
 
-Se o cadastro for recusado, o Knox acaba aqui: o dono desativa o administrador, e a defesa continua sendo o relógio.
+**O que se aprendeu, para um dia:**
+- A lista oficial de 20/10/2025 ainda deixava o `allowPowerOff` no modo administrador, e o firmware deste celular (Knox 3.11, One UI 8.5) não checa Device Owner nesse método. O portão do `ShutdownThread` cobre o menu da tecla lateral, o painel rápido, o Bixby e o Reiniciar.
+- A permissão certa é a `KNOX_HW_CONTROL`, e o resultado da licença chega em `com.samsung.android.knox.intent.action.KNOX_LICENSE_STATUS`.
+- O `adb shell dpm remove-active-admin` só remove administrador de teste (`android:testOnly`). Um app comum sai com o `DevicePolicyManager.removeActiveAdmin` dele mesmo, ou pelas Configurações.
+- A trava também barraria o Reiniciar, as atualizações do sistema e o Modo Manutenção, e não seguraria o reinício forçado, o modo de segurança pelas teclas, o modo de recuperação nem a bateria a 0%.
+- Revisão adversarial de 13/11: 58 agentes, 39 achados, 26 confirmados. Os achados estão no histórico do git (commit `04909b2`).
 
-### A doc confere (13/11, 09:55)
+**O que foi feito no aparelho:**
+- O dono ativou o Turbilhão como administrador às 10:13 de 13/11 para testar o Nubank. Nada foi travado: a licença nunca foi ativada.
+- A saída (o `comando sair`, pelo cabo, antes de tirar o código) e a prova no `dumpsys device_policy` estão no relatório `docs/RELATORIO_KNOX_RELOGIO.md`.
 
-- A lista oficial dos métodos tirados do modo administrador no Android 15+ (atualizada em 20/10/2025, já com o Android 16 lançado) **não tem o `allowPowerOff` nem a licença**. Pela matriz da mesma página, os outros métodos continuam acessíveis no modo administrador.
-- Em 06/2024, a Samsung avisou que planeja estender a restrição aos poucos a todos os métodos, nas versões seguintes do Android. Até a lista de 10/2025, isso não aconteceu com o `allowPowerOff`. A prova final é o aparelho (passo 5).
-- O `allowPowerOff` pede a permissão `com.samsung.android.knox.permission.KNOX_HW_CONTROL`, e não a `KNOX_RESTRICTION_MGMT`.
-  - Ele trava a tecla lateral, o desligar do painel rápido e o reset de fábrica.
-  - Com a trava, aparece o aviso "Security policy prevents power off".
-  - Com vários administradores, basta um travar.
-- O resultado da licença chega na ação `com.samsung.android.knox.intent.action.KNOX_LICENSE_STATUS` (com `KNOX_`), com o código em `com.samsung.android.knox.intent.extra.KNOX_LICENSE_ERROR_CODE` (0 = sucesso).
-
-### O código
-
-| Commit | O que faz |
-|---|---|
-| `132bffe` (K1) | `AdminDoAlarme`: administrador do aparelho sem nenhuma política (`res/xml/device_admin.xml`) |
-| `d79bf11` (K2) | `TravaDoDesligar.ativarLicenca`, por reflexão, sem o `knoxsdk.jar`. O `TravaPeloCabo` (permissão `DUMP`, só o adb) recebe a chave. O `LicencaDoKnox` loga só o código do resultado. A chave não fica guardada no app: o app tem `allowBackup`, e as `SharedPreferences` iriam para o backup do Google. Para ativar de novo, ela vem de novo pelo cabo |
-| `6ed7ec2` (K3) | `travar` e `liberar` (`allowPowerOff`), a permissão `KNOX_HW_CONTROL`, e o estado (`isPowerOffAllowed`) no log depois de cada pedido. Não há botão na tela. Se a reflexão falhar, só loga |
-| `6f916b4` (conserto) | `sair`: libera o desligar e o próprio app deixa de ser administrador. O `dpm remove-active-admin` só remove admin de teste (`android:testOnly`) e dava `SecurityException`. Desativar em Configurações mostra o aviso "Isso destrava o desligar" |
-
-Testes JVM (`./gradlew testDebugUnitTest assembleRelease`, com o `flock`): **122 testes, 0 falhas** (8 novos em `TravaDoDesligarTest`: os comandos e o erro que nunca lança).
-
-Comandos, só pelo cabo (o log sai em `adb logcat -s Implacavel`, nas linhas `Knox: …`):
-
-```
-adb shell dpm set-active-admin com.implacavel.alarme/.AdminDoAlarme       # passo do dono
-read -rs K; adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es chave "$K"; unset K   # o dono, no terminal dele
-adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es comando liberar
-adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es comando travar
-adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo             # só pergunta o estado
-adb shell am broadcast -n com.implacavel.alarme/.TravaPeloCabo --es comando sair    # saída de emergência pelo cabo
-```
-
-- **A chave não passa pelo chat nem pelo terminal do Claude.** Lá ela fica gravada em disco: na transcrição e no histórico de comandos. O dono roda o comando da chave no terminal dele; o Claude só lê o `logcat`. Até o primeiro reinício depois da ativação, não gerar bugreport nem colar `dumpsys activity` em lugar nenhum (o histórico de broadcasts pode guardar os extras).
-- **Sem PC**, a saída é Configurações › Segurança e privacidade › Apps de administração do dispositivo › Turbilhão › Desativar (o nome exato do menu pode variar). O `dpm remove-active-admin` **não** serve.
-
-### No aparelho
-
-| Passo | Resultado | Prova |
-|---|---|---|
-| 0. Antes | **ok** | 10:03: nenhum `AlarmeService`. Próximo toque do Chiron hoje às 18:30, do Turbilhão 14/11 às 04:45. Backup em `backup-apk/2026-11-13/celular-turbilhao-1004.apk` (43 321 973 bytes) |
-| 1. Instalar o Turbilhão | **ok** | `install -r` deu `Success` (10:04:02). O `DISPARAR` de 14/11 04:45 voltou ao lugar e o Chiron foi avisado (`DESPERTADOR`, 10:04:03). O `AdminDoAlarme` aparece no sistema, inativo |
-| 1b. Reflexão sem administrador (não muda nada) | **ok** | `desligar permitido = true`: as classes do Knox existem no One UI 8. O `liberar` deu `SecurityException: No active admin owned by uid 10143`, foi para o log e o app continuou vivo |
-| 2. Ativar o administrador | **ok** | O dono rodou o `dpm set-active-admin` (13/11, ~10:13): `Success`. O `dumpsys device_policy` lista o `AdminDoAlarme` ao lado do Knox Guard e do Alarmy. O desligar continua permitido (`desligar permitido = true`) e o despertador de 14/11 04:45 continua armado |
-| 3a. Instalar o conserto da saída (`6f916b4`) | **ok** | 10:58: `install -r` deu `Success`. O administrador continua ativo, o `DISPARAR` de 14/11 04:45 continua armado, e `desligar permitido = true` (o `dumpsys restriction_policy` mostra `powerOffAllowed: true`). O `comando sair` não foi rodado: ele desativaria o administrador no meio do teste do Nubank |
-| 3. Nubank com o administrador ativo, por pelo menos 1 dia | **em andamento desde 13/11 10:13** | Se o Nubank bloquear: desativar em Configurações (ou `comando sair`), registrar aqui, e o Knox acaba |
-| 4 em diante | só numa sessão seguinte, com a chave já na mão do dono | Ver "Plano da sessão da licença" abaixo |
-
-### O Nubank e o administrador
-
-- **Antes desta mudança, o celular já tinha dois administradores ativos:**
-  - o Knox Guard da Samsung (`com.samsung.android.kgclient`);
-  - o **Alarmy** (`droom.sleepIfUCan`, da Play, contexto `EDM ADMIN`).
-- O Nubank funciona com os dois.
-- A diferença: o Turbilhão vem pelo cabo, fora da Play. Foi esse o caso que o Nubank barrou em outubro, com a acessibilidade.
-
-### Efeitos do administrador e da trava
-
-- Enquanto o administrador está ativo, o Android não deixa desinstalar o Turbilhão sem desativá-lo antes. O `install -r` continua funcionando.
-- Com a trava, ficam travados também:
-  - o **Reiniciar** do menu;
-  - a **instalação das atualizações do sistema**, que precisa reiniciar ([KBA-1868](https://docs.samsungknox.com/dev/knox-sdk/kbas/kba-1868-device-doesnt-perform-factory-reset-or-receive-software-updates-via-fota/)). A rotina vira: `liberar`, atualizar, `travar` e conferir o log. Conflito não resolvido: no firmware deste celular, o reboot da atualização chama `reboot(null)`, que pularia o portão;
-  - o **reset de fábrica** pelas Configurações;
-  - o **Modo Manutenção** (visto no código do firmware). Antes de levar à assistência, `liberar`.
-- A trava fica no serviço do Knox, não no processo do Turbilhão: um crash ou um kill do app não a desfaz.
-- **A licença vence em 2 anos.** Depois disso, o `liberar` pode falhar. A saída continua sendo desativar o administrador. Anotar a data da ativação aqui (nunca a chave).
-- **Saída de emergência:** desativar o administrador em Configurações, ou o `comando sair` pelo cabo.
-  - O app não pode se tornar não removível: o `setAdminRemovable(false)` está na lista tirada do modo administrador, e o código não o chama.
-  - Desativar não pede PIN e leva uns 5 toques. É atrito, não trava. O reinício forçado é até mais fácil, e o relógio cobre os dois.
-  - No firmware, remover o administrador recarrega a política (`RestrictionPolicy.onAdminRemoved`). Isso se confere no aparelho, logo depois do primeiro `travar`.
-
-### A revisão adversarial (13/11, 10:20 a 10:55)
-
-- 58 agentes, em cinco frentes: a API do Knox contra a doc, o firmware do celular (só leitura), o código Android, os modos de falha e o plano de testes.
-- Cada achado passou por um ou dois verificadores que tentavam refutá-lo: 39 achados, 26 confirmados e 13 refutados.
-- Foi revisão de doc, código e firmware. **Não é prova no aparelho.**
-
-O que o firmware deste celular confirmou (`knoxsdk.jar` e `services.jar`, Knox 3.11, Premium SDK 3.13, One UI 8.5, patch 2026-08-05):
-
-- As assinaturas usadas na reflexão existem e são públicas: `allowPowerOff(Z)Z`, `isPowerOffAllowed()Z`, `getInstance(Context)`, `getRestrictionPolicy()` e `activateLicense(String)`.
-- **O `allowPowerOff` não tem checagem de Device Owner nem de Profile Owner.** Ele pede só um administrador ativo com `KNOX_HW_CONTROL`, no usuário 0.
-- O portão fica no `ShutdownThread`. Ele cobre o menu da tecla lateral, o painel rápido, o Bixby (motivo `bixbyrequest`) e todo reinício com motivo, inclusive o modo de segurança pelo menu.
-- O que pula o portão: bateria a 0% ou superaquecida (`BatteryService`), e um reboot sem motivo (`reboot(null)`).
-- A `KNOX_HW_CONTROL` existe no aparelho e é de assinatura. A licença a concede.
-- O resultado da licença vai só para este app (`setPackage`), com os extras que o `LicencaDoKnox` lê.
-
-Confiança de que a trava funciona contra o menu, o painel e o Bixby, **se a chave sair: média.** O que decide só se vê no aparelho:
-- a trava continua depois de um reinício, antes do primeiro desbloqueio;
-- desativar o administrador desfaz a trava.
-
-### Plano da sessão da licença
-
-**Antes da sessão:**
-1. A chave está na mão do dono: de que portal veio, e se está amarrada a um app (tem que ser `com.implacavel.alarme`).
-2. A atualização do sistema pendente (desde 08/11) foi instalada à mão, de dia. Assim a trava é provada no firmware em que vai ficar. Não aceitar a instalação noturna: a janela é das 2h às 5h, e cai no toque das 04:45.
-3. Só leitura: `dumpsys restriction_policy` como base, e `dumpsys package droom.sleepIfUCan | grep -i knox`, para confirmar que o Alarmy não usa o Knox.
-
-**Na sessão** (o dono segura o celular; nenhum alarme tocando nem armado para a próxima meia hora):
-1. **Licença.** O celular desbloqueado, com rede. O dono roda o comando da chave no terminal dele e aceita a tela de privacidade do Knox. Esperar `Knox: licença ok (tipo 800)` antes de qualquer outro comando, uma tentativa por vez. Erros: 601 (tela recusada ou não vista), 501/502 (rede), 201 (chave errada), 204/208 (chave de outro app), 205 (data do aparelho).
-2. **`liberar`:** `liberar o desligar -> true`.
-3. **`travar`:** `travar o desligar -> true` e `desligar permitido = false`. O `dumpsys restriction_policy` mostra `powerOffAllowed: false`.
-4. **A saída, logo cedo.** Desativar em Configurações (o aviso aparece) e conferir `desligar permitido = true` e o menu de volta. O dono reativa o administrador, e `travar` de novo, **sem** mandar a chave de novo. Depois, provar também o `comando sair`, reativar e `travar`.
-5. **Tentar desligar**, com a tela desbloqueada e depois bloqueada. Tentar o menu da tecla lateral (Desligar, Reiniciar e o toque longo em Desligar), o botão do painel rápido e o Bixby por voz ("desligar" e "reiniciar"). Esperado: o aviso "Security policy prevents power off".
-6. **Com alarme.** Um alarme de teste do Turbilhão para dali a 2 min, com a trava ligada. Tentar desligar durante o toque e durante a missão: os dois continuam.
-7. **Persistência.**
-   - Reinício forçado. Na tela de bloqueio, antes do PIN, tentar a tecla lateral e o Bixby. Depois do desbloqueio, perguntar o estado: `desligar permitido = false`.
-   - `install -r` do mesmo APK: continua `false`, e `liberar` e `travar` continuam funcionando.
-8. **Modo de segurança pelas teclas**, sem alarme armado: ver se o celular sobe nele e o que o relógio mostra. Sair com outro reinício forçado.
-9. **Modo Manutenção:** bloqueado com a trava e de volta com o `liberar`.
-10. **Estado final:** administrador ativo, `desligar permitido = false`, e o dono abre o Nubank. Na manhã seguinte, o toque real das 04:45 no log, com a trava ligada.
-
-**Nunca testar** o reset de fábrica nem o apagar remoto: se a trava falhar ali, o celular é apagado.
-
-**Opções para o dono decidir antes da licença** (as permissões vêm na ativação):
-- `allowSafeMode(false)`: fecha o modo de segurança pelo menu. Pelas teclas, a doc não diz. Custa uma chamada e a permissão `KNOX_RESTRICTION_MGMT`.
-- Trava permanente (o plano de hoje) ou só durante o alarme e a missão:
-  - **permanente** cobre também um desligamento de noite, antes do alarme; em troca, trava o Reiniciar, as atualizações e o Modo Manutenção, e desligar de propósito pede o PC ou as Configurações;
-  - **só no alarme** teria coberto os dois desligamentos de 13/11: o de 05:03 foi no meio da missão, e o das 06:00 com o Turbilhão tocando de novo depois do boot. Em troca, não cobre a noite e mexe no `AlarmeService`.
-
+**O código:** entrou em `132bffe`, `d79bf11`, `6ed7ec2` e `6f916b4` e saiu em `88d058a` (o administrador, a licença, os comandos, o `device_admin.xml` e os receivers do manifesto).
 
 ## Fontes
 
