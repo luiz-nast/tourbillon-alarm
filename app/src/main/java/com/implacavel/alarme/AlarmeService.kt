@@ -401,7 +401,7 @@ class AlarmeService : Service() {
     private var iaFalando = false // a voz da IA está tocando: o relógio da conversa anda
     private var vezDaConversa = 0L // SystemClock.elapsedRealtime em que começou a vez da pessoa
     private var ouvidoEm = 0L // a última fala ouvida na vez da pessoa
-    private var escuta: Escuta? = null // o microfone e o reconhecedor da conversa, do começo ao fim dela
+    private var escuta: Escuta? = null // o microfone e o reconhecedor da conversa, do começo ao fim dela; só nasce no Android 13+ ([abrirConversa]), e as chamadas a ela levam a checagem de versão pro lint
     private var textoDaVez = "" // o que a pessoa disse desde a última fala da IA (a [escuta] manda tudo junto)
     private var fazendoSom = false // ela está fazendo som agora (o detector da [escuta]), e o som é dela ([somDaPessoa])
     private var nivelDaPessoa: Float? = null // o volume da voz dela (dB), dos sons que viraram palavra ([nivelDaVoz])
@@ -1342,7 +1342,7 @@ class AlarmeService : Service() {
             if (n > bipesDaConversa) {
                 bipesDaConversa = n
                 Log.i(TAG, "Conversa: ${calado / 1000} s calado na sua vez, bipe $n")
-                escuta?.surdoPor(sirene.bipe(n) + ATRASO_DO_BIPE_MS)
+                if (Build.VERSION.SDK_INT >= 33) escuta?.surdoPor(sirene.bipe(n) + ATRASO_DO_BIPE_MS)
             }
         }
     }
@@ -1425,7 +1425,7 @@ class AlarmeService : Service() {
         val rodada = rodadaConversa
         val vez = vezDaIa // ele falou de novo durante o bipe ([descartarResposta]): a pergunta velha não toca no meio da vez dele
         val bipe = sirene.bipe(BIPE_DO_NAO_ENTENDI)
-        escuta?.surdoPor(bipe + ATRASO_DO_BIPE_MS)
+        if (Build.VERSION.SDK_INT >= 33) escuta?.surdoPor(bipe + ATRASO_DO_BIPE_MS)
         handler.postDelayed({ if (rodada == rodadaConversa && vez == vezDaIa && _conversa.value != null) falarDaIa(repete) }, bipe + ATRASO_DO_BIPE_MS)
     }
 
@@ -1496,15 +1496,15 @@ class AlarmeService : Service() {
         }
         if (!bipar) return falar()
         val bipe = sirene.bipe(BIPE_DO_JUIZO)
-        escuta?.surdoPor(bipe + ATRASO_DO_BIPE_MS)
+        if (Build.VERSION.SDK_INT >= 33) escuta?.surdoPor(bipe + ATRASO_DO_BIPE_MS)
         handler.postDelayed({ if (rodada == rodadaConversa) falar() }, bipe + ATRASO_DO_BIPE_MS)
     }
 
     /** Uma fala da voz na conversa: enquanto ela toca, a [escuta] não ouve (o eco da voz não é a pessoa). */
     private fun falarNaConversa(arquivo: File?, depois: () -> Unit) {
-        escuta?.surdo(true)
+        if (Build.VERSION.SDK_INT >= 33) escuta?.surdo(true)
         sirene.falar(arquivo) {
-            escuta?.surdo(false)
+            if (Build.VERSION.SDK_INT >= 33) escuta?.surdo(false)
             depois()
         }
     }
@@ -1517,7 +1517,7 @@ class AlarmeService : Service() {
         bipesDaConversa = 0
         textoDaVez = ""
         provisoria = null
-        escuta?.novaVez()
+        if (Build.VERSION.SDK_INT >= 33) escuta?.novaVez()
         handler.removeCallbacks(fimDaVez)
         _ultimaFala.value = agora
         _conversa.value = c.copy(suaVez = true, pensando = false, ouvido = "")
@@ -1553,7 +1553,7 @@ class AlarmeService : Service() {
         val c = _conversa.value ?: return
         if (texto == textoDaVez || (!c.suaVez && provisoria == null)) return
         textoDaVez = texto
-        escuta?.let { nivelDaPessoa = nivelDaVoz(nivelDaPessoa, it.nivelDoUltimoSom()) }
+        if (Build.VERSION.SDK_INT >= 33) escuta?.let { nivelDaPessoa = nivelDaVoz(nivelDaPessoa, it.nivelDoUltimoSom()) }
         _conversa.value = c.copy(ouvido = texto)
         // Mais palavras com a IA já pensando: ele continuou falando, e a resposta vai fora. Menos de 1 s depois do
         // pedido e sem som novo dele, é só o reconhecedor fechando a frase (às vezes com uma palavra a mais)
@@ -1561,7 +1561,7 @@ class AlarmeService : Service() {
         val continuou = p != null && quantasPalavras(texto) > quantasPalavras(p.texto) &&
             (p.segurada || SystemClock.elapsedRealtime() - p.desde > FRASE_ATRASADA_MS)
         if (continuou) {
-            Log.i(TAG, "Conversa: ele continuou falando antes da voz, a resposta da IA vai fora (${escuta?.resumo()})")
+            Log.i(TAG, "Conversa: ele continuou falando antes da voz, a resposta da IA vai fora (${if (Build.VERSION.SDK_INT >= 33) escuta?.resumo() else null})")
             descartarResposta()
         }
         vozDaPessoa()
@@ -1618,13 +1618,13 @@ class AlarmeService : Service() {
         }
         descartarResposta()
         _conversa.value = c.copy(suaVez = false, pensando = true)
-        Log.i(TAG, "Conversa: ele parou (${texto.length} letras, ${escuta?.resumo()}), ${conversadoMs / 1000} s de ${c.metaMs / 1000}")
+        Log.i(TAG, "Conversa: ele parou (${texto.length} letras, ${if (Build.VERSION.SDK_INT >= 33) escuta?.resumo() else null}),${conversadoMs / 1000} s de ${c.metaMs / 1000}")
         transcricao += Turno(daIa = false, texto = texto)
         when {
             c.perguntandoSeContinua -> respondeuSeContinua(texto)
             conversadoMs < c.metaMs -> {
                 provisoria = Provisoria(texto)
-                responderNaIa(falaComAlternativas(texto, escuta?.alternativas().orEmpty()))
+                responderNaIa(falaComAlternativas(texto, if (Build.VERSION.SDK_INT >= 33) escuta?.alternativas().orEmpty() else emptyList()))
             }
             extras == 0 -> perguntarSeContinua(texto)
             else -> terminarConversa("tempo de conversa completo, com o extra")
@@ -2116,7 +2116,7 @@ class AlarmeService : Service() {
 
     /** A [escuta] desliga (fim da conversa, a música voltou ou o alarme acabou): microfone e reconhecedor soltos. */
     private fun pararEscuta() {
-        escuta?.parar()
+        if (Build.VERSION.SDK_INT >= 33) escuta?.parar()
         escuta = null
         textoDaVez = ""
         fazendoSom = false

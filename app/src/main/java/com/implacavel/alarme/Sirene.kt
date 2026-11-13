@@ -387,7 +387,7 @@ class Sirene(private val ctx: Context) {
         return runCatching {
             mp.setAudioAttributes(ATRIBUTOS)
             mp.setDataSource(ctx, uri)
-            noAltoFalante(mp) // só depois do setDataSource: antes dele o MediaPlayer ignora a saída escolhida
+            if (Build.VERSION.SDK_INT >= 28) noAltoFalante(mp) // só depois do setDataSource: antes dele o MediaPlayer ignora a saída escolhida
             mp.isLooping = emLoop
             mp.prepare()
             mp.start()

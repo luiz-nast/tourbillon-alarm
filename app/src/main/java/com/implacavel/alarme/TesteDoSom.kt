@@ -152,7 +152,8 @@ class TesteDoSom : Activity() {
         val antes = audio.getStreamVolume(AudioManager.STREAM_ALARM)
         val acordador = tocar("android.resource://$packageName/${R.raw.silencio}", emLoop = true)
         try {
-            audio.setStreamVolume(AudioManager.STREAM_ALARM, audio.getStreamMinVolume(AudioManager.STREAM_ALARM).coerceAtLeast(1), 0)
+            val minimo = if (Build.VERSION.SDK_INT >= 28) audio.getStreamMinVolume(AudioManager.STREAM_ALARM).coerceAtLeast(1) else 1
+            audio.setStreamVolume(AudioManager.STREAM_ALARM, minimo, 0)
             repeat(2) {
                 Thread.sleep(6_000)
                 Log.i(TAG, "Som teste: MediaPlayer às ${LocalTime.now()}")
@@ -190,7 +191,7 @@ class TesteDoSom : Activity() {
         return runCatching {
             mp.setAudioAttributes(ATRIBUTOS)
             mp.setDataSource(this, Uri.parse(caminho))
-            noAltoFalante(mp)
+            if (Build.VERSION.SDK_INT >= 28) noAltoFalante(mp)
             mp.isLooping = emLoop
             mp.setVolume(GANHO, GANHO)
             mp.prepare()
