@@ -252,8 +252,8 @@ adb shell dpm remove-active-admin com.implacavel.alarme/.AdminDoAlarme    # saí
 | 0. Antes | **ok** | 10:03: nenhum `AlarmeService`. Próximo toque do Chiron hoje às 18:30, do Turbilhão 14/11 às 04:45. Backup em `backup-apk/2026-11-13/celular-turbilhao-1004.apk` (43 321 973 bytes) |
 | 1. Instalar o Turbilhão | **ok** | `install -r` deu `Success` (10:04:02). O `DISPARAR` de 14/11 04:45 voltou ao lugar e o Chiron foi avisado (`DESPERTADOR`, 10:04:03). O `AdminDoAlarme` aparece no sistema, inativo |
 | 1b. Reflexão sem administrador (não muda nada) | **ok** | `desligar permitido = true`: as classes do Knox existem no One UI 8. O `liberar` deu `SecurityException: No active admin owned by uid 10143`, foi para o log e o app continuou vivo |
-| 2. Ativar o administrador | **falta: passo do dono** | Mudar a segurança do celular é passo do dono, não meu |
-| 3. Nubank com o administrador ativo, por pelo menos 1 dia | falta | Se o Nubank bloquear: `dpm remove-active-admin`, registrar aqui, e o Knox acaba |
+| 2. Ativar o administrador | **ok** | O dono rodou o `dpm set-active-admin` (13/11, ~10:13): `Success`. O `dumpsys device_policy` lista o `AdminDoAlarme` ao lado do Knox Guard e do Alarmy. O desligar continua permitido (`desligar permitido = true`) e o despertador de 14/11 04:45 continua armado |
+| 3. Nubank com o administrador ativo, por pelo menos 1 dia | **em andamento desde 13/11 10:13** | Se o Nubank bloquear: `dpm remove-active-admin`, registrar aqui, e o Knox acaba |
 | 4 a 9. Licença, `liberar`, `travar`, testes de desligar, saída de emergência | só numa sessão seguinte | Quando o dono disser que o Nubank passou e mandar a chave KPE |
 
 ### O Nubank e o administrador
