@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O mínimo: nenhuma política do Android. O administrador só existe porque o Knox exige um pra trava do desligar -->
+<device-admin>
+    <uses-policies />
+</device-admin>
