@@ -8,7 +8,7 @@
 | 2. Relógio implacável | **Feito e no GitHub** (Veyron, Chiron e Turbilhão). |
 | 3. Instalar e testar no relógio | **O relógio real não apareceu no adb.** Plano B: 7 testes no relógio virtual, todos passaram. Os 3 testes ao vivo pedidos não rodaram. |
 
-**Commits, todos na `main` e com push:** Veyron `076d952`, `1aabbed` e `a4e162d`; Chiron `8d59e4a`; Turbilhão `ab67854`, `b2bbaa9` (este relatório), `9aedf79` (tira o código do Knox), `9a6d9b2` (docs) e a atualização deste relatório.
+**Commits, todos na `main` e com push:** Veyron `076d952`, `1aabbed`, `a4e162d` e `6d141c7`; Chiron `8d59e4a`; Turbilhão `ab67854`, `b2bbaa9` (este relatório), `9aedf79` (tira o código do Knox), `9a6d9b2` (docs) e a atualização deste relatório.
 
 ## O que foi feito
 
@@ -18,6 +18,7 @@
   - **O que o cala:** só uma batida nova do Turbilhão ou a missão concluída, que o Chiron conta. O `parar` do celular é ignorado para o Turbilhão.
   - **Com o celular perto:** o relógio toca uma vez junto com o despertador, e a tela fica até a missão acabar.
   - **Lembretes comuns:** iguais a antes.
+  - **Versões misturadas** (`6d141c7`, achado na revisão): com o Chiron antigo, que não manda o estado do Turbilhão, nada calaria o relógio. Por isso o modo implacável só liga depois da primeira agenda nova do Chiron; antes dela, vale o espelho de antes, com botões.
 - **Chiron:** a agenda leva ao relógio o estado do Turbilhão (última batida, prazo, missão concluída). O despertador vai sem as 5 cobranças antigas.
 - **Turbilhão:** se o celular estava desligado na hora do despertador, ele toca o despertador perdido quando o celular volta (até 12 h). É essa batida que cala o relógio.
 - **Knox:** saem o administrador, a licença, os comandos `travar`, `liberar` e `sair`, o `device_admin.xml` e os receivers. A doc registra por que foi descartado (a chave KPE só sai para empresa aprovada).
@@ -44,7 +45,7 @@
 
 | App | Antes | Depois | Falhas |
 |---|---|---|---|
-| Veyron | 287 | 315 | 0 |
+| Veyron | 287 | 322 | 0 |
 | Chiron | 330 (1 ignorado) | 335 (1 ignorado) | 0 |
 | Turbilhão | 122 | 121: entram 7 do despertador perdido e saem os 8 do Knox, junto com o código dele | 0 |
 
@@ -64,6 +65,7 @@ O `lintDebug` do Turbilhão falha com 14 erros `NewApi` antigos, em arquivos que
 | 5 | 12:29:31 e 12:29:52 | Não perturbe em "prioridade" e em "só alarmes" | **ok**: toca, com a vibração repetida de alarme. O Não perturbe foi restaurado | `implacável: toca tourbillon-dnd` |
 | 6 | 12:30:33 | A tela | **ok**: no Turbilhão, sem botão ("Só o Turbilhão desliga"); no lembrete comum, "+10 min" e "FEITO" e a vibração única de 1,5 s, como antes | `celular longe: toca` |
 | 7 | 12:32 | O voltar e o deslize | **ok**: a `TelaDoAlarme` continua na frente | `topResumedActivity=…TelaDoAlarme` |
+| 8 | 14:01 e 14:02 | Versões misturadas (Veyron `6d141c7`): sem a agenda nova do Chiron, e depois com ela | **ok**: sem ela, o despertador segue o espelho de antes, com "+10 min" e "FEITO", e o FEITO fecha; com ela, toca implacável, sem botão, e a batida nova cala | `celular longe: toca` / `implacável: toca tourbillon-novo (IMPLACAVEL, …)` |
 
 **O relógio virtual não prova:**
 - o modo "celular perto" (`ACOMPANHA`), porque não há celular pareado;
