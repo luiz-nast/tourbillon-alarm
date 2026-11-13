@@ -5,6 +5,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
+import androidx.core.content.edit
+import java.time.Instant
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 /**
@@ -29,6 +33,17 @@ object Agendador {
      */
     private const val RESERVA_MS = 90_000L
 
+    /**
+     * Até quanto tempo depois da hora um despertador perdido (o celular estava desligado) ainda toca quando o celular
+     * volta. 12 h: o relógio toca sem parar até a batida da missão do Turbilhão voltar, e com o celular desligado na hora
+     * do despertador nenhuma batida nova chegaria; tocar o perdido é o que a traz de volta (Veyron/docs/RELOGIO_IMPLACAVEL.md,
+     * D4). Passado isso, acordar já não serve pra nada.
+     */
+    const val JANELA_PERDIDO_MS = 12 * 60 * 60_000L
+
+    /** O despertador perdido toca daqui a este tempo: o suficiente pro boot assentar, e ainda pelo mesmo caminho do alarme normal. */
+    private const val PERDIDO_TOCA_EM_MS = 2_000L
+
     /** Agenda a próxima ocorrência (ou a cancela, se o alarme estiver desligado). Retorna quando vai tocar. */
     fun agendar(ctx: Context, alarme: Alarme): ZonedDateTime? {
         if (!alarme.ativo) {
@@ -37,10 +52,19 @@ object Agendador {
         }
         val quando = alarme.proximoDisparo(ZonedDateTime.now())
         val millis = quando.toInstant().toEpochMilli()
+        // A hora guardada vai antes de armar: se o processo cair no meio, sobra uma hora futura, nunca uma velha que tocaria em dobro
+        if (!alarme.deTeste) guardarArmado(ctx, alarme.id, millis)
         agendarEm(ctx, millis, disparo(ctx, alarme.id))
         if (!alarme.deTeste) AvisoAoChiron.despertador(ctx, alarme.id, millis, alarme.nome)
         return quando
     }
+
+    /**
+     * Passou da hora em que o despertador foi armado ([armadoPara], epoch em ms; 0 = não há) por no máximo [JANELA_PERDIDO_MS]?
+     * Pelo AlarmManager ele já teria tocado, então só sobra por ele ter sumido (o celular desligado, ou o "Forçar parada").
+     */
+    fun perdido(armadoPara: Long, agora: Long): Boolean =
+        armadoPara > 0 && armadoPara <= agora && agora - armadoPara <= JANELA_PERDIDO_MS
 
     /** Botões de teste: toca o alarme de teste ([Alarme.teste], com ou sem [caminhada]) daqui a [segundos]. */
     fun agendarTeste(ctx: Context, segundos: Int, caminhada: Boolean = false) {
@@ -50,6 +74,7 @@ object Agendador {
 
     fun cancelar(ctx: Context, id: Int) {
         alarmManager(ctx).cancel(disparo(ctx, id))
+        guardarArmado(ctx, id, null)
         AvisoAoChiron.despertador(ctx, id, 0, "")
     }
 
@@ -72,8 +97,33 @@ object Agendador {
     /**
      * Refaz os disparos a partir do que está salvo. Chamado pelo [BootReceiver] (reiniciar o celular
      * apaga tudo) e ao abrir o app (o "Forçar parada" também apaga). A retomada é refeita pelo [App].
+     *
+     * O despertador ativo que devia ter tocado há até [JANELA_PERDIDO_MS] ([perdido]) toca agora: rearma o mesmo DISPARAR
+     * daqui a 2 s, sem passar pelo [agendar]. Quando ele chegar, o [AlarmeReceiver] arma a próxima ocorrência (ou desliga o
+     * alarme de uma vez só), e é aí que a hora guardada muda: até lá ela continua velha, então um segundo reagendamento
+     * nesses 2 s só empurra o mesmo DISPARAR (mesmo PendingIntent), sem tocar em dobro.
      */
-    fun reagendarTodos(ctx: Context) = Alarmes.lista.value.forEach { agendar(ctx, it) }
+    fun reagendarTodos(ctx: Context) {
+        val agora = System.currentTimeMillis()
+        Alarmes.lista.value.forEach {
+            val armado = armados(ctx).getLong(it.id.toString(), 0)
+            if (it.ativo && !it.deTeste && perdido(armado, agora)) {
+                val hora = Instant.ofEpochMilli(armado).atZone(ZoneId.systemDefault()).toLocalTime()
+                Log.i(TAG, "Despertador ${it.id} perdido (o celular estava desligado às ${hhmm(hora)}): tocando agora")
+                agendarEm(ctx, agora + PERDIDO_TOCA_EM_MS, disparo(ctx, it.id))
+            } else {
+                agendar(ctx, it)
+            }
+        }
+    }
+
+    /** A hora (epoch em ms) em que cada despertador foi armado, por id; sem ela [reagendarTodos] não sabe que um se perdeu. Teste não entra. */
+    private fun armados(ctx: Context) = ctx.prefsProtegidas("armados")
+
+    /** Guarda a hora armada de [id], ou a apaga com null. commit e não apply: o receiver pode ser encerrado logo em seguida. */
+    private fun guardarArmado(ctx: Context, id: Int, millis: Long?) = armados(ctx).edit(commit = true) {
+        if (millis == null) remove(id.toString()) else putLong(id.toString(), millis)
+    }
 
     private fun agendarEm(ctx: Context, quando: Long, pi: PendingIntent) {
         val am = alarmManager(ctx)
