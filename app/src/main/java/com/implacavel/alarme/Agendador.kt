@@ -36,7 +36,9 @@ object Agendador {
             return null
         }
         val quando = alarme.proximoDisparo(ZonedDateTime.now())
-        agendarEm(ctx, quando.toInstant().toEpochMilli(), disparo(ctx, alarme.id))
+        val millis = quando.toInstant().toEpochMilli()
+        agendarEm(ctx, millis, disparo(ctx, alarme.id))
+        if (!alarme.deTeste) AvisoAoChiron.despertador(ctx, alarme.id, millis, alarme.nome)
         return quando
     }
 
@@ -46,19 +48,25 @@ object Agendador {
         agendarEm(ctx, System.currentTimeMillis() + segundos * 1_000L, disparo(ctx, id))
     }
 
-    fun cancelar(ctx: Context, id: Int) = alarmManager(ctx).cancel(disparo(ctx, id))
+    fun cancelar(ctx: Context, id: Int) {
+        alarmManager(ctx).cancel(disparo(ctx, id))
+        AvisoAoChiron.despertador(ctx, id, 0, "")
+    }
 
     /** Arma (ou empurra pra frente) a retomada do alarme em andamento, daqui a [ms]. O Android arredonda pra no mínimo uns 5 s. */
     fun agendarRetomada(ctx: Context, ms: Long = RETOMADA_MS) {
         val agora = System.currentTimeMillis()
         agendarEm(ctx, agora + ms, retomada(ctx, reserva = false))
         agendarEm(ctx, agora + ms + RESERVA_MS, retomada(ctx, reserva = true))
+        // O AlarmeService chama a cada 5 s; o limite de 1 aviso por minuto fica no AvisoAoChiron
+        if (Ajustes.emAndamento?.alarme?.deTeste == false) AvisoAoChiron.missaoViva(ctx, agora)
     }
 
     /** Missão cumprida: não há mais o que retomar. */
     fun cancelarRetomada(ctx: Context) {
         alarmManager(ctx).cancel(retomada(ctx, reserva = false))
         alarmManager(ctx).cancel(retomada(ctx, reserva = true))
+        AvisoAoChiron.missaoAcabou(ctx)
     }
 
     /**

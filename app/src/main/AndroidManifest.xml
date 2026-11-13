@@ -12,6 +12,8 @@
         android:name="com.implacavel.alarme.permission.IA"
         android:protectionLevel="signature" />
 
+    <!-- O receiver do Chiron exige esta permissão de quem lhe conta o despertador (AvisoAoChiron) -->
+    <uses-permission android:name="com.implacavel.alarme.permission.IA" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Alarme no minuto exato. USE_EXACT_ALARM é concedida na instalação (Android 13+);
          a Play Store só aceita em apps de despertador, mas aqui o APK é seu. -->
@@ -64,6 +66,8 @@
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
+        <!-- E o Chiron, que recebe o aviso do despertador e da missão viva -->
+        <package android:name="io.github.luiz_nast.chiron.routine" />
     </queries>
 
     <application
