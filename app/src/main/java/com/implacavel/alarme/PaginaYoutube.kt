@@ -32,9 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleStartEffect
 
 private const val ENDERECO_YOUTUBE = "https://m.youtube.com"
 
@@ -105,21 +103,11 @@ class YoutubeDaMissao(private val ctx: Context) {
 @Composable
 fun rememberYoutubeDaMissao(): YoutubeDaMissao {
     val ctx = LocalContext.current
-    val dono = LocalLifecycleOwner.current
     val youtube = remember { YoutubeDaMissao(ctx) }
-    DisposableEffect(dono) {
-        val observador = LifecycleEventObserver { _, evento ->
-            when (evento) {
-                Lifecycle.Event.ON_START -> youtube.retomar()
-                Lifecycle.Event.ON_STOP -> youtube.pausar()
-                else -> {}
-            }
-        }
-        dono.lifecycle.addObserver(observador)
-        onDispose {
-            dono.lifecycle.removeObserver(observador)
-            youtube.destruir()
-        }
+    DisposableEffect(youtube) { onDispose { youtube.destruir() } }
+    LifecycleStartEffect(youtube) {
+        youtube.retomar()
+        onStopOrDispose { youtube.pausar() }
     }
     return youtube
 }
