@@ -13,7 +13,7 @@ class ConversaTest {
 
     @Test
     fun conversaPedeOsMinutosDosAjustesETeste3() {
-        assertEquals(10 * 60_000L, metaConversa(Alarme(1, 7, 0, caminhada = true))) // de começo
+        assertEquals(10 * 60_000L, metaConversa(Alarme(1, 7, 0, caminhada = true), TEMPOS_PADRAO)) // de começo
         assertEquals(25 * 60_000L, metaConversa(Alarme(1, 7, 0, caminhada = true), Tempos(conversaMin = 25)))
         assertEquals(3 * 60_000L, metaConversa(Alarme.teste(caminhada = true), Tempos(conversaMin = 25))) // o teste não segue os ajustes
         assertEquals(3 * 60_000L, extraDaConversa(Alarme(1, 7, 0, caminhada = true)))

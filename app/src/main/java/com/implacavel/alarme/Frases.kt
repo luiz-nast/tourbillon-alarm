@@ -40,5 +40,5 @@ val FRASES_MOTIVACIONAIS = listOf(
 )
 
 /** As [quantas] frases do [dia] ([Tempos.frases]), sorteadas da lista: sempre as mesmas no mesmo dia, outras no dia seguinte. */
-fun frasesDoDia(dia: LocalDate, quantas: Int = TEMPOS_PADRAO.frases): List<String> =
+fun frasesDoDia(dia: LocalDate, quantas: Int): List<String> =
     FRASES_MOTIVACIONAIS.shuffled(Random(dia.toEpochDay())).take(quantas.coerceIn(0, FRASES_MOTIVACIONAIS.size))

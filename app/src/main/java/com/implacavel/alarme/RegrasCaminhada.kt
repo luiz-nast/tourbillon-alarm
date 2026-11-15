@@ -192,10 +192,10 @@ private const val PARADO_VELOCIDADE = 0.4f
 private const val RAIO_DA_TERRA_M = 6_371_000.0
 
 /** Quanto tempo andando a caminhada do [alarme] pede: o dos [tempos] (de começo, 10 min); no teste, [CAMINHADA_TESTE_MS]. */
-fun metaCaminhada(alarme: Alarme, tempos: Tempos = TEMPOS_PADRAO): Long = if (alarme.deTeste) CAMINHADA_TESTE_MS else minutos(tempos.caminhadaMin)
+fun metaCaminhada(alarme: Alarme, tempos: Tempos): Long = if (alarme.deTeste) CAMINHADA_TESTE_MS else minutos(tempos.caminhadaMin)
 
 /** O prazo pra sair de casa do [alarme], depois da conversa: o dos [tempos] (de começo, 5 min); no teste, [PRAZO_SAIR_TESTE_MS]. */
-fun prazoSair(alarme: Alarme, tempos: Tempos = TEMPOS_PADRAO): Long = if (alarme.deTeste) PRAZO_SAIR_TESTE_MS else minutos(tempos.prepararMin)
+fun prazoSair(alarme: Alarme, tempos: Tempos): Long = if (alarme.deTeste) PRAZO_SAIR_TESTE_MS else minutos(tempos.prepararMin)
 
 /**
  * Um fixo do GPS, sem o Location do Android (pra testar): [tempoMs] no relógio que não pula

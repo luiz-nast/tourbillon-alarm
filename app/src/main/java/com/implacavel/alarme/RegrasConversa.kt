@@ -231,7 +231,7 @@ enum class CaminhoDaManha {
 }
 
 /** Quanto tempo de conversa o [alarme] pede: o dos [tempos] (de começo, 10 min); no teste, [CONVERSA_TESTE_MS]. */
-fun metaConversa(alarme: Alarme, tempos: Tempos = TEMPOS_PADRAO): Long = if (alarme.deTeste) CONVERSA_TESTE_MS else minutos(tempos.conversaMin)
+fun metaConversa(alarme: Alarme, tempos: Tempos): Long = if (alarme.deTeste) CONVERSA_TESTE_MS else minutos(tempos.conversaMin)
 
 /** Quanto a meta da conversa sobe quando a pessoa quer continuar. */
 fun extraDaConversa(alarme: Alarme): Long = if (alarme.deTeste) CONVERSA_EXTRA_TESTE_MS else CONVERSA_EXTRA_MS

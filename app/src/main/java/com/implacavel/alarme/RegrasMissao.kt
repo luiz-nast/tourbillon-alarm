@@ -27,13 +27,13 @@ val BIPES_ATE_ZERAR = ((DESISTENCIA_MS - 1) / AVISO_SEM_OLHAR_MS).toInt()
 enum class Leitura { SEM_CAMERA, SEM_ROSTO, OLHOS_FECHADOS, OLHANDO }
 
 /** Quanto tempo de olhos abertos a missão do [alarme] pede: o modo fácil mais o exigente dos [tempos] (de começo, 20 + 20 min). */
-fun metaOlhar(alarme: Alarme, tempos: Tempos = TEMPOS_PADRAO): Long = if (alarme.deTeste) META_OLHAR_TESTE_MS else minutos(tempos.cameraMin)
+fun metaOlhar(alarme: Alarme, tempos: Tempos): Long = if (alarme.deTeste) META_OLHAR_TESTE_MS else minutos(tempos.cameraMin)
 
 /**
  * Com quanto tempo de olhos abertos vem a verificação do meio (e, depois dela, o modo exigente): o modo fácil dos
  * [tempos] (de começo, 20 min); no teste, a metade.
  */
-fun verificacaoEm(alarme: Alarme, tempos: Tempos = TEMPOS_PADRAO): Long = if (alarme.deTeste) META_OLHAR_TESTE_MS / 2 else minutos(tempos.cameraFacilMin)
+fun verificacaoEm(alarme: Alarme, tempos: Tempos): Long = if (alarme.deTeste) META_OLHAR_TESTE_MS / 2 else minutos(tempos.cameraFacilMin)
 
 /** Aceita "stop" e jeitos de falar ou transcrever com sotaque ("estop", "istópi", "stopi"). */
 fun disseStop(texto: String): Boolean {

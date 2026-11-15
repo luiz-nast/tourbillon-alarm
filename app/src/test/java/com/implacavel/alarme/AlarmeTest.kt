@@ -114,7 +114,7 @@ class AlarmeTest {
         assertFalse(Alarme(1, 7, 0).deTeste)
         assertFalse(Alarme(1, 7, 0, caminhada = true).deTeste)
         // Se um câmera + frases tomar o lugar dele, a câmera do teste também é curta
-        assertEquals(META_OLHAR_TESTE_MS, metaOlhar(caminhada))
+        assertEquals(META_OLHAR_TESTE_MS, metaOlhar(caminhada, TEMPOS_PADRAO))
     }
 
     @Test
@@ -184,7 +184,7 @@ class AlarmeTest {
         val teste = EmAndamento(Alarme.teste(), desde = 0, musica = "content://musica/1", volume = 3)
         val junto = teste.juntar(Alarme(5, 7, 0), agora = 99)
         assertEquals(EmAndamento(Alarme(5, 7, 0), desde = 99, musica = "content://musica/1", volume = 3), junto)
-        assertEquals(minutos(TEMPOS_PADRAO.cameraMin), metaOlhar(junto.alarme)) // 40 min, não os 30 s do teste
+        assertEquals(minutos(TEMPOS_PADRAO.cameraMin), metaOlhar(junto.alarme, TEMPOS_PADRAO)) // 40 min, não os 30 s do teste
         assertEquals(99L, junto.desde) // a subida do volume recomeça com ele
         // Com as regras dele: alarme sem missão continua sem missão
         assertFalse(teste.juntar(Alarme(6, 7, 0, missao = false), agora = 99).alarme.missao)

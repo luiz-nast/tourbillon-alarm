@@ -68,8 +68,8 @@ class MissaoTest {
     @Test
     fun cameraPedeOsMinutosDosAjustesETeste30Segundos() {
         // De começo, 20 min fáceis + 20 exigentes, com a verificação aos 20
-        assertEquals(40 * 60_000L, metaOlhar(Alarme(1, 7, 0)))
-        assertEquals(20 * 60_000L, verificacaoEm(Alarme(1, 7, 0)))
+        assertEquals(40 * 60_000L, metaOlhar(Alarme(1, 7, 0), TEMPOS_PADRAO))
+        assertEquals(20 * 60_000L, verificacaoEm(Alarme(1, 7, 0), TEMPOS_PADRAO))
         // O dono mexeu: 5 fáceis + 30 exigentes
         val tempos = Tempos(cameraFacilMin = 5, cameraDificilMin = 30)
         assertEquals(35 * 60_000L, metaOlhar(Alarme(1, 7, 0), tempos))
@@ -165,10 +165,10 @@ class MissaoTest {
 
     @Test
     fun frasesDiferentesPorDiaQuantasODonoPediu() {
-        val hoje = frasesDoDia(LocalDate.of(2026, 10, 11))
+        val hoje = frasesDoDia(LocalDate.of(2026, 10, 11), TEMPOS_PADRAO.frases)
         assertEquals(5, hoje.toSet().size) // de começo, 5
-        assertEquals(hoje, frasesDoDia(LocalDate.of(2026, 10, 11))) // as mesmas no mesmo dia
-        assertTrue(hoje != frasesDoDia(LocalDate.of(2026, 10, 12)))
+        assertEquals(hoje, frasesDoDia(LocalDate.of(2026, 10, 11), TEMPOS_PADRAO.frases)) // as mesmas no mesmo dia
+        assertTrue(hoje != frasesDoDia(LocalDate.of(2026, 10, 12), TEMPOS_PADRAO.frases))
         assertEquals(10, frasesDoDia(LocalDate.of(2026, 10, 11), quantas = 10).toSet().size)
         assertTrue(frasesDoDia(LocalDate.of(2026, 10, 11), quantas = 0).isEmpty()) // zero: sem verificação
         assertEquals(hoje, frasesDoDia(LocalDate.of(2026, 10, 11), quantas = 10).take(5)) // o mesmo sorteio, só mais frases
