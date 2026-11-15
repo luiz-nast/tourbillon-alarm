@@ -844,6 +844,13 @@ class AlarmeService : Service() {
         voz?.gravar("saudacao_${++rodadas}", textoDaSaudacao(LocalTime.now()), falar) ?: falar(null)
     }
 
+    /** A saudação acabou (ou foi cortada): nem o prazo dela nem o anúncio do começo valem mais. */
+    private fun fimDaSaudacao() {
+        handler.removeCallbacks(comecarAtividade)
+        handler.removeCallbacks(anunciarInicio)
+        _saudando.value = false
+    }
+
     /** "Activity starting now", o bipe positivo e a câmera. No despertador "conversa + caminhada", [saudacaoFeita] no lugar. */
     private val anunciarInicio: Runnable = Runnable {
         if (!_saudando.value) return@Runnable
@@ -865,9 +872,7 @@ class AlarmeService : Service() {
         }
         Log.i(TAG, "Missão: saudação feita, começa a câmera")
         sirene.manterAcordado(false) // a manhã virou a missão de 40 min antes de decidir (outro alarme juntou no bom dia)
-        _saudando.value = false
-        handler.removeCallbacks(comecarAtividade)
-        handler.removeCallbacks(anunciarInicio)
+        fimDaSaudacao()
         adiarVigia()
         comecarCamera()
     }
@@ -1113,9 +1118,7 @@ class AlarmeService : Service() {
         if (cumprido) return
         handler.removeCallbacks(vigia)
         // No meio da saudação: ela para (a música cala a fala) e a câmera não começa
-        handler.removeCallbacks(comecarAtividade)
-        handler.removeCallbacks(anunciarInicio)
-        _saudando.value = false
+        fimDaSaudacao()
         voz?.cancelar()
         // No meio da verificação: ela para; volta do começo na próxima vez que o anel chegar na metade
         rodadaVerificacao++
@@ -1262,9 +1265,7 @@ class AlarmeService : Service() {
 
     /** A etapa da manhã começa, ou volta depois do STOP e do bom dia: a conversa (com a [primeira] fala da IA, ou a IA retomando) ou a caminhada. */
     private fun continuarManha(primeira: String? = null) {
-        handler.removeCallbacks(comecarAtividade)
-        handler.removeCallbacks(anunciarInicio)
-        _saudando.value = false
+        fimDaSaudacao()
         when (etapa) {
             EtapaDaManha.CONVERSA -> abrirConversa(primeira)
             EtapaDaManha.CAMINHADA, null -> comecarCaminhada()
@@ -1681,9 +1682,7 @@ class AlarmeService : Service() {
         voz?.cancelar()
         // O bom dia acabou (sem a IA, a fala de sair vem logo depois dele): a tela mostra a fala no cartão da conversa e
         // pode fechar nesse meio tempo, como na conversa (emSegundoPlano)
-        handler.removeCallbacks(comecarAtividade)
-        handler.removeCallbacks(anunciarInicio)
-        _saudando.value = false
+        fimDaSaudacao()
         if (_conversa.value == null) {
             _conversa.value = Conversa(falaDaIa = falaDeSair(prazoSairDaquiAte()), suaVez = false, pensando = false, conversadoMs = conversadoMs, metaMs = metaDaConversa(alarme))
         }
@@ -1757,6 +1756,16 @@ class AlarmeService : Service() {
             s.ligar(this@AlarmeService)
             handler.postDelayed(this, RELER_LOCALIZACAO_MS)
         }
+    }
+
+    /** A caminhada para: avisos de parado, ondas, mini tarefa e as duas telas dela, e o GPS com [desligarGps] (a volta pra conversa, nos testes, segue com ele). */
+    private fun pararCaminhada(desligarGps: Boolean) {
+        handler.removeCallbacks(fimDasOndas)
+        handler.removeCallbacks(vigiaDaCaminhada)
+        sirene.ondas(false)
+        if (desligarGps) desligarSentidos() else { pararMiniTarefa(); contador?.desligar(); contador = null }
+        _caminhada.value = null
+        _miniTarefa.value = null
     }
 
     /** O relógio e os sentidos da caminhada desligados (a música voltou, ou o alarme acabou). */
@@ -1972,14 +1981,7 @@ class AlarmeService : Service() {
      */
     private fun voltarPraConversa() {
         val alarme = _tocando.value ?: return
-        handler.removeCallbacks(fimDasOndas)
-        handler.removeCallbacks(vigiaDaCaminhada)
-        contador?.desligar()
-        contador = null
-        pararMiniTarefa()
-        sirene.ondas(false)
-        _caminhada.value = null
-        _miniTarefa.value = null
+        pararCaminhada(desligarGps = false)
         prazoAte = 0L
         conversadoMs = 0
         extras = 0
@@ -2019,12 +2021,7 @@ class AlarmeService : Service() {
         if (!Poder.CAMERA.liberado(this)) return // sem câmera não há como dispensar nela: fica na caminhada (o botão nem aparece)
         Log.i(TAG, "Chuva: troca a caminhada na rua pela câmera")
         // Derruba a caminhada por inteiro: sem isso o ContadorDaCaminhada concluiria por baixo da câmera, e os bipes e as ondas de parado seguiriam
-        handler.removeCallbacks(vigiaDaCaminhada)
-        handler.removeCallbacks(fimDasOndas)
-        sirene.ondas(false)
-        desligarSentidos() // para o ContadorDaCaminhada, o GPS e a mini tarefa
-        _caminhada.value = null
-        _miniTarefa.value = null
+        pararCaminhada(desligarGps = true)
         _comCaminhada.value = false
         caminho = CaminhoDaManha.ANTIGO // destrava a câmera (manhaNova fica falsa) e herda a dispensa do "câmera + frases"
         zerarAnel()
@@ -2076,21 +2073,16 @@ class AlarmeService : Service() {
     /** A música voltou: a etapa da manhã para (o que chegar depois de antes não vale), e o caminho e o progresso ficam. */
     private fun pausarManha() {
         rodadaConversa++
-        desligarSentidos()
-        handler.removeCallbacks(fimDasOndas)
-        sirene.ondas(false)
+        pararCaminhada(desligarGps = true)
         sirene.manterAcordado(false)
         handler.removeCallbacks(tiqueDaConversa)
         handler.removeCallbacks(fimDaVez)
-        handler.removeCallbacks(vigiaDaCaminhada)
         handler.removeCallbacks(esperaDaDecisao)
         descartarResposta() // uma resposta que já tinha chegado e não foi dita: a IA fica sabendo
         pararEscuta()
         iaFalando = false
         saudacaoTerminou = false
         _conversa.value = null
-        _caminhada.value = null
-        _miniTarefa.value = null
         if (caminho == null) {
             // Ainda decidindo: no próximo STOP, tudo de novo
             motor?.desligar()
