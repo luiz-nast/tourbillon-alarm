@@ -1755,16 +1755,17 @@ class AlarmeService : Service() {
         handler.removeCallbacks(fimDasOndas)
         handler.removeCallbacks(vigiaDaCaminhada)
         sirene.ondas(false)
-        if (desligarGps) desligarSentidos() else { pararMiniTarefa(); contador?.desligar(); contador = null }
+        desligarSentidos(comGps = desligarGps)
         _caminhada.value = null
         _miniTarefa.value = null
     }
 
-    /** O relógio e os sentidos da caminhada desligados (a música voltou, ou o alarme acabou). */
-    private fun desligarSentidos() {
+    /** O relógio da caminhada e, com [comGps], o GPS desligados (a música voltou, ou o alarme acabou). */
+    private fun desligarSentidos(comGps: Boolean = true) {
         pararMiniTarefa()
         contador?.desligar()
         contador = null
+        if (!comGps) return
         handler.removeCallbacks(relerLocalizacao)
         sentidosDoServico?.desligar()
         sentidosDoServico = null
