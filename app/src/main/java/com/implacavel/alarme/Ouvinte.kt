@@ -75,8 +75,7 @@ class Ouvinte(
 
     /** Qualquer sinal do reconhecedor mostra que ele está vivo: o prazo de [travou] recomeça. */
     private fun aguardarResposta() {
-        handler.removeCallbacks(travou)
-        handler.postDelayed(travou, ESPERA_RESPOSTA_MS)
+        handler.reagendar(travou, ESPERA_RESPOSTA_MS)
     }
 
     private fun escutarDeNovo(esperaMs: Long) {

@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.media.AudioManager
+import android.os.Handler
 import android.util.Log
 
 /** Tag dos logs do app. Pra acompanhar um alarme: `adb logcat -s Implacavel`. */
@@ -16,6 +17,12 @@ const val TAG = "Implacavel"
  */
 fun Context.prefsProtegidas(nome: String): SharedPreferences =
     createDeviceProtectedStorageContext().getSharedPreferences(nome, Context.MODE_PRIVATE)
+
+/** Põe [r] pra rodar daqui a [ms], tirando antes o que já estava marcado (nunca roda duas vezes). */
+fun Handler.reagendar(r: Runnable, ms: Long) {
+    removeCallbacks(r)
+    postDelayed(r, ms)
+}
 
 /**
  * Início do processo. Roda antes de qualquer tela, receiver ou serviço, inclusive logo após o

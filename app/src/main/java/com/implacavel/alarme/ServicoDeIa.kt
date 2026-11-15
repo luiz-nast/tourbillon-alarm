@@ -43,8 +43,7 @@ class ServicoDeIa : Service() {
         }
 
         private fun soltarDaquiAPouco() {
-            principal.removeCallbacks(soltar)
-            principal.postDelayed(soltar, PARADO_MS)
+            principal.reagendar(soltar, PARADO_MS)
         }
 
         /** Um alarme está tocando, em andamento ou o teste da IA está com o modelo: o alarme passa na frente. */

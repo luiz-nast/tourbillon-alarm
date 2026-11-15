@@ -258,8 +258,7 @@ class Escuta(
         Log.i(TAG, "Escuta: sessão do reconhecedor acabou ($motivo), abrindo outra (falhas seguidas: $falhasSeguidas)")
         if (falhasSeguidas >= LIMITE_FALHAS) return indisponivel()
         fecharSessao()
-        handler.removeCallbacks(reabrir)
-        handler.postDelayed(reabrir, if (falhasSeguidas <= 1) 100 else 1_000)
+        handler.reagendar(reabrir, if (falhasSeguidas <= 1) 100 else 1_000)
     }
 
     private fun indisponivel() {

@@ -195,8 +195,7 @@ class Sirene(private val ctx: Context) {
         bipador?.release()
         bipador = tocarArquivo(somDoApp(if (teste) R.raw.bipe else som), emLoop = false)
         val duracao = (bipador?.duration?.coerceAtLeast(0) ?: 0).toLong()
-        handler.removeCallbacks(voltarDoBipe)
-        handler.postDelayed(voltarDoBipe, duracao + FOLGA_BIPE_MS)
+        handler.reagendar(voltarDoBipe, duracao + FOLGA_BIPE_MS)
         return duracao
     }
 

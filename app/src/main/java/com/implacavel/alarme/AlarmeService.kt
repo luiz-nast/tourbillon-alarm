@@ -1059,8 +1059,7 @@ class AlarmeService : Service() {
     private fun esperarResposta() {
         _ultimaResposta.value = SystemClock.elapsedRealtime()
         apitos = 0
-        handler.removeCallbacks(silencio)
-        handler.postDelayed(silencio, SILENCIO_APITO_MS)
+        handler.reagendar(silencio, SILENCIO_APITO_MS)
     }
 
     /** Sem resposta na verificação: um apito alto a cada [SILENCIO_APITO_MS] e, em [SILENCIO_ZERA_MS], zera como a vigia. */
@@ -1112,8 +1111,7 @@ class AlarmeService : Service() {
     private fun adiarVigia() {
         _ultimoOlhar.value = SystemClock.elapsedRealtime()
         bipes = 0
-        handler.removeCallbacks(vigia)
-        handler.postDelayed(vigia, AVISO_SEM_OLHAR_MS)
+        handler.reagendar(vigia, AVISO_SEM_OLHAR_MS)
     }
 
     /** Música de volta no volume cheio; se estava calada, a missão volta pra etapa de falar. O anel não muda aqui. */
@@ -1268,8 +1266,7 @@ class AlarmeService : Service() {
         if (escolhido == CaminhoDaManha.SO_CAMINHADA) return irPraCaminhada()
         // A missão de 40 min, com o mesmo prazo se a voz travar (e o alto-falante como no alarme de sempre)
         sirene.manterAcordado(false)
-        handler.removeCallbacks(comecarAtividade)
-        handler.postDelayed(comecarAtividade, SAUDACAO_MAX_MS)
+        handler.reagendar(comecarAtividade, SAUDACAO_MAX_MS)
         anunciarInicio.run()
     }
 
@@ -1307,8 +1304,7 @@ class AlarmeService : Service() {
             palavras = listaDePalavras(Ajustes.palavras.value),
         ).also { if (!it.comecar()) return }
         ultimoTique = SystemClock.elapsedRealtime()
-        handler.removeCallbacks(tiqueDaConversa)
-        handler.postDelayed(tiqueDaConversa, TIQUE_CONVERSA_MS)
+        handler.reagendar(tiqueDaConversa, TIQUE_CONVERSA_MS)
         if (primeira != null) {
             val abertura = vereditoDaFala(primeira).second // a abertura não julga ninguém
             // No 3º "não entendi" seguido, é ela que volta (a pergunta de abertura), e não outro "não entendi"
@@ -1756,8 +1752,7 @@ class AlarmeService : Service() {
         val s = sentidosDoServico ?: SentidosDaCaminhada().also {
             sentidosDoServico = it
             _sentidos.value = it
-            handler.removeCallbacks(relerLocalizacao)
-            handler.postDelayed(relerLocalizacao, RELER_LOCALIZACAO_MS)
+            handler.reagendar(relerLocalizacao, RELER_LOCALIZACAO_MS)
         }
         s.ligar(this)
         return s
@@ -2072,8 +2067,7 @@ class AlarmeService : Service() {
         val agora = SystemClock.elapsedRealtime()
         _ultimoPasso.value = agora
         bipesParado = 0
-        handler.removeCallbacks(vigiaDaCaminhada)
-        handler.postDelayed(vigiaDaCaminhada, primeiroBipeParado(agora, prazoAte) - agora)
+        handler.reagendar(vigiaDaCaminhada, primeiroBipeParado(agora, prazoAte) - agora)
     }
 
     /**
