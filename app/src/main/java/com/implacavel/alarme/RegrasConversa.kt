@@ -231,7 +231,7 @@ enum class CaminhoDaManha {
 
     companion object {
         /** O caminho gravado com este [nome] no [Progresso] (null se não é de nenhum). "ANTIGO" é o nome que a [CAMERA] tinha: uma gravação de antes da troca continua valendo. */
-        fun deNome(nome: String): CaminhoDaManha? = entries.firstOrNull { it.name == nome.replace("ANTIGO", "CAMERA") }
+        fun deNome(nome: String): CaminhoDaManha? = if (nome == "ANTIGO") CAMERA else entries.firstOrNull { it.name == nome }
     }
 }
 
