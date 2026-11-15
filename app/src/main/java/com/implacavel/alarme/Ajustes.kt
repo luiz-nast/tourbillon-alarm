@@ -59,7 +59,7 @@ object Ajustes {
      */
     var progresso: Progresso?
         get() = runCatching { prefs.getString("progresso", null)?.let { Progresso.deJson(JSONObject(it)) } }.getOrNull()
-        set(valor) = prefs.edit { if (valor == null) remove("progresso") else putString("progresso", valor.paraJson().toString()) }
+        set(valor) = prefs.edit(commit = true) { if (valor == null) remove("progresso") else putString("progresso", valor.paraJson().toString()) }
 
     private val _volumeDaVoz = MutableStateFlow(VOLUME_DA_VOZ)
 
