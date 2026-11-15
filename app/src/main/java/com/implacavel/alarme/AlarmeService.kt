@@ -834,7 +834,7 @@ class AlarmeService : Service() {
             prepararManha()
             ligarSentidos() // o GPS acerta a mira durante a conversa
             // A chuva de agora, 100% assíncrona (thread própria + callback no main): nunca trava o toque. Só o botão de trocar pela câmera depende dela; sem dado, segue a rua.
-            Clima.chuva(this) { _chuvaForte.value = ofereceCamera(it) }
+            Clima.chuva(this) { _chuvaForte.value = it }
         } else if (caminho == null) {
             caminho = CaminhoDaManha.ANTIGO
             soltarIa() // uma IA preparada durante a música não vai servir
