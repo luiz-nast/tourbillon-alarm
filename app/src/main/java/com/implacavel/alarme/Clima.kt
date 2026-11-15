@@ -33,11 +33,11 @@ private val CODIGOS_FORTES = setOf(65, 67, 82, 95, 96, 99)
 fun chuvaForte(precipitacaoMm: Double?, codigo: Int?): Boolean =
     (precipitacaoMm != null && precipitacaoMm >= CHUVA_FORTE_MM) || (codigo != null && codigo in CODIGOS_FORTES)
 
-/** Chuva forte na resposta do Open-Meteo (`current.precipitation` + `current.weather_code`). Quebrada: não. */
-fun chuvaForteNoOpenMeteo(json: String): Boolean = runCatching {
+/** Chuva forte na resposta do Open-Meteo (`current.precipitation` + `current.weather_code`). Resposta quebrada: lança JSONException. */
+fun chuvaForteNoOpenMeteo(json: String): Boolean {
     val agora = JSONObject(json).getJSONObject("current")
-    chuvaForte((agora.opt("precipitation") as? Number)?.toDouble(), (agora.opt("weather_code") as? Number)?.toInt())
-}.getOrDefault(false)
+    return chuvaForte((agora.opt("precipitation") as? Number)?.toDouble(), (agora.opt("weather_code") as? Number)?.toInt())
+}
 
 /** O pedido do tempo de agora no Open-Meteo, com o lugar arredondado em 2 casas (uns 1 km), sempre com ponto decimal. */
 fun enderecoDoClima(latitude: Double, longitude: Double): String =
@@ -53,7 +53,11 @@ object Clima {
         val lugar = ultimoLugar(ctx)
         if (lugar == null) Log.i(TAG, "Clima: sem localização conhecida, não dá pra saber a chuva")
         thread(isDaemon = true, name = "clima") {
-            val forte = lugar?.let { runCatching { baixarTexto(enderecoDoClima(it.latitude, it.longitude))?.let(::chuvaForteNoOpenMeteo) }.getOrNull() } == true
+            val forte = lugar?.let {
+                runCatching { baixarTexto(enderecoDoClima(it.latitude, it.longitude))?.let(::chuvaForteNoOpenMeteo) }
+                    .onFailure { erro -> Log.w(TAG, "Clima: resposta que não dá pra ler", erro) }
+                    .getOrNull()
+            } == true
             Log.i(TAG, "Clima: chuva forte=$forte")
             handler.post { if (numero == pedidos) aoSaber(forte) }
         }

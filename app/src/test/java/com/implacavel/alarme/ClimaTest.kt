@@ -1,6 +1,8 @@
 package com.implacavel.alarme
 
+import org.json.JSONException
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,14 +26,18 @@ class ClimaTest {
 
     @Test fun semDadoSegueNaRua() {
         assertFalse(chuvaForte(null, null))
-        assertFalse(chuvaForteNoOpenMeteo("não é json"))
+        assertFalse(chuvaForteNoOpenMeteo("""{"current":{}}"""))
+    }
+
+    @Test fun respostaQuebradaLancaPraQuemChamaRegistrar() {
+        assertThrows(JSONException::class.java) { chuvaForteNoOpenMeteo("não é json") }
+        assertThrows(JSONException::class.java) { chuvaForteNoOpenMeteo("""{"outra":1}""") }
     }
 
     @Test fun leOResponderDoOpenMeteo() {
         assertFalse(chuvaForteNoOpenMeteo("""{"current":{"precipitation":0.0,"weather_code":2}}"""))
         assertFalse(chuvaForteNoOpenMeteo("""{"current":{"precipitation":0.5,"weather_code":61}}"""))
         assertTrue(chuvaForteNoOpenMeteo("""{"current":{"precipitation":4.2,"weather_code":65}}"""))
-        assertFalse(chuvaForteNoOpenMeteo("""{"current":{}}"""))
     }
 
     @Test fun oEnderecoUsaPontoDecimalEDuasCasas() {
