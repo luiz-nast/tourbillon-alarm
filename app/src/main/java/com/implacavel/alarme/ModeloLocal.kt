@@ -58,6 +58,17 @@ private val AMOSTRAGEM = SamplerConfig(topK = 64, topP = 0.95, temperature = 0.9
 /** Quem anota é mais certinho: temperatura baixa. */
 private val AMOSTRAGEM_DAS_ANOTACOES = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.3)
 
+/** Uma conversa nova do [Engine] com a [instrucao] do sistema, [amostragem] e teto de [maxTokens] por resposta, sem o modo "pensar" (só na thread do modelo). */
+private fun Engine.conversa(instrucao: String, amostragem: SamplerConfig, maxTokens: Int): Conversation = createConversation(
+    ConversationConfig(
+        systemInstruction = Contents.of(instrucao),
+        samplerConfig = amostragem,
+        prefillPrefaceOnInit = true,
+        maxOutputToken = maxTokens,
+        thinkingConfig = ThinkingConfig(enableThinking = false),
+    ),
+)
+
 /** Uma fala da conversa, da IA ([daIa]) ou da pessoa. */
 data class Turno(val daIa: Boolean, val texto: String)
 
@@ -199,15 +210,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         /** A conversa limpa pra próxima pergunta do Chiron, já com a [instrucao] lida (só na thread do modelo). */
         private fun reservarAvulsa(app: Context, instrucao: String) {
             fecharAvulsa()
-            avulsa = carregado(app).createConversation(
-                ConversationConfig(
-                    systemInstruction = Contents.of(instrucao),
-                    samplerConfig = AMOSTRAGEM_AVULSA,
-                    prefillPrefaceOnInit = true,
-                    maxOutputToken = AVULSA_MAX_TOKENS,
-                    thinkingConfig = ThinkingConfig(enableThinking = false),
-                ),
-            )
+            avulsa = carregado(app).conversa(instrucao, AMOSTRAGEM_AVULSA, AVULSA_MAX_TOKENS)
             instrucaoDaAvulsa = instrucao
         }
 
@@ -259,15 +262,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         internal fun textoDe(resposta: Message): String = resposta.contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
 
         /** A conversa da manhã, com a [instrucao] como instrução do sistema (o modelo já lê a instrução ao criar). Só na thread do modelo. */
-        internal fun conversaDaManha(engine: Engine, instrucao: String): Conversation = engine.createConversation(
-            ConversationConfig(
-                systemInstruction = Contents.of(instrucao),
-                samplerConfig = AMOSTRAGEM,
-                prefillPrefaceOnInit = true,
-                maxOutputToken = RESPOSTA_MAX_TOKENS,
-                thinkingConfig = ThinkingConfig(enableThinking = false),
-            ),
-        )
+        internal fun conversaDaManha(engine: Engine, instrucao: String): Conversation = engine.conversa(instrucao, AMOSTRAGEM, RESPOSTA_MAX_TOKENS)
 
         /** O que uma troca com o modelo devolveu: a [fala] final e, se a IA pediu uma busca no meio, o que ela [buscou]. */
         internal class Troca(val fala: String, val buscou: String?)
@@ -302,15 +297,8 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
          * [pedidoDeAnotacoes]; volta limpo ([limparAnotacoes]). Só a conversa de hoje: nada se acumula de um dia pro outro.
          */
         internal fun anotarCom(engine: Engine, transcricao: List<Turno>, hoje: LocalDate): String =
-            engine.createConversation(
-                ConversationConfig(
-                    systemInstruction = Contents.of(INSTRUCAO_DAS_ANOTACOES),
-                    samplerConfig = AMOSTRAGEM_DAS_ANOTACOES,
-                    prefillPrefaceOnInit = true,
-                    maxOutputToken = ANOTACOES_MAX_TOKENS,
-                    thinkingConfig = ThinkingConfig(enableThinking = false),
-                ),
-            ).use { c -> limparAnotacoes(textoDe(c.sendMessage(pedidoDeAnotacoes(transcricao, hoje)))) }
+            engine.conversa(INSTRUCAO_DAS_ANOTACOES, AMOSTRAGEM_DAS_ANOTACOES, ANOTACOES_MAX_TOKENS)
+                .use { c -> limparAnotacoes(textoDe(c.sendMessage(pedidoDeAnotacoes(transcricao, hoje)))) }
     }
 
     private val app = ctx.applicationContext
