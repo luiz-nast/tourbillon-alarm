@@ -47,7 +47,6 @@ class Sirene(private val ctx: Context) {
     private var ondas: MediaPlayer? = null // o som de ondas do prazo pra sair de casa ([ondas])
     private var falaAcordando: Runnable? = null // uma fala esperando a saída do alto-falante acordar ([falarDepoisDeAcordar])
     private var acordadoPraFala = false // o [acordador] é só dessa fala: acaba com ela
-    private var musica: String? = null
     private var foto: EmAndamento? = null
     private var fator = 1f // volume da música relativo ao de alarme ([volume])
     private var volumeAntesDoBipe: Int? = null // só enquanto um bipe toca no degrau dele
@@ -112,7 +111,6 @@ class Sirene(private val ctx: Context) {
      */
     fun preparar(em: EmAndamento, comeco: Boolean) {
         val trocouSom = foto != null && foto?.alarme?.remedio != em.alarme.remedio
-        musica = em.musica
         foto = em
         if (comeco) runCatching { audio.setStreamVolume(AudioManager.STREAM_ALARM, piso(), 0) }
         // Outro alarme juntou no meio e trocou o som (música ↔ toque de remédio): troca já, se está tocando
@@ -369,7 +367,7 @@ class Sirene(private val ctx: Context) {
      */
     private fun tocarSom() {
         val candidatos = listOfNotNull(
-            if (foto?.alarme?.remedio == true) somDoApp(R.raw.lembrete) else musica?.toUri(),
+            if (foto?.alarme?.remedio == true) somDoApp(R.raw.lembrete) else foto?.musica?.toUri(),
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
             somDoApp(R.raw.alarme_reserva),

@@ -724,14 +724,6 @@ class AlarmeService : Service() {
         }
         gravarDiagnostico()
         Log.i(TAG, "Serviço: tocando \"${alarme.nome}\" (missão=${alarme.missao}, remédio=${alarme.remedio}, caminhada=${alarme.caminhada}, quedas=$quedas)")
-        // Voltando no meio deste mesmo alarme: de onde parou. Alarme novo: progresso nenhum
-        val salvo = Ajustes.progresso
-        if (salvo?.desde == em.desde) retomarProgresso(salvo) else if (salvo != null) Ajustes.progresso = null
-        // O modelo começa a carregar já, com a música, pra estar pronto no fim do bom dia (só se a manhã ainda não
-        // decidiu o caminho). Se o app já saiu sozinho neste alarme (queda, travamento ou falta de memória), pode ter
-        // sido ele: a manhã vai sem a conversa
-        iaBloqueada = saiuSozinhoDesde(em.desde) || Ajustes.iaTentadaEm == em.desde
-        if (caminho == null) prepararIa(alarme, em)
         telaAberta = true
         _silenciado.value = false
         _saudando.value = false
@@ -740,11 +732,14 @@ class AlarmeService : Service() {
         _conversa.value = null
         _caminhada.value = null
         _miniTarefa.value = null
-        // O anel e a verificação do progresso retomado (os de cima zeraram a tela, não o progresso)
-        if (salvo?.desde == em.desde) {
-            _olhado.value = salvo.olhadoMs
-            _metadeVerificada.value = salvo.metadeVerificada
-        }
+        // Voltando no meio deste mesmo alarme: de onde parou, o anel e a verificação por cima dos zeros de cima. Alarme novo: progresso nenhum
+        val salvo = Ajustes.progresso
+        if (salvo?.desde == em.desde) retomarProgresso(salvo) else if (salvo != null) Ajustes.progresso = null
+        // O modelo começa a carregar já, com a música, pra estar pronto no fim do bom dia (só se a manhã ainda não
+        // decidiu o caminho). Se o app já saiu sozinho neste alarme (queda, travamento ou falta de memória), pode ter
+        // sido ele: a manhã vai sem a conversa
+        iaBloqueada = saiuSozinhoDesde(em.desde) || Ajustes.iaTentadaEm == em.desde
+        if (caminho == null) prepararIa(alarme, em)
         sirene.tocar()
         handler.post(renovar)
     }
