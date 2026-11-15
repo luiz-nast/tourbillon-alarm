@@ -13,7 +13,6 @@ import android.content.Intent
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -233,8 +232,8 @@ class Escuta(
             .putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_SAMPLING_RATE, TAXA)
                 // A sessão só acaba quando o cano fecha: nada de recomeçar a cada frase
             .putExtra(RecognizerIntent.EXTRA_SEGMENTED_SESSION, RecognizerIntent.EXTRA_AUDIO_SOURCE)
-        // Android 13+: o reconhecedor tende às palavras dele (um que não sabe, ignora)
-        if (palavras.isNotEmpty() && Build.VERSION.SDK_INT >= 33) pedido.putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS, ArrayList(palavras))
+        // O reconhecedor tende às palavras dele (um que não sabe, ignora)
+        if (palavras.isNotEmpty()) pedido.putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS, ArrayList(palavras))
         r.startListening(pedido)
     }
 
