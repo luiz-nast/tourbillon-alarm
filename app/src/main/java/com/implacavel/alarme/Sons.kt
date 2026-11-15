@@ -65,7 +65,7 @@ object Sons {
      * fora da thread da tela.
      */
     fun adicionar(ctx: Context, uri: Uri): Som? {
-        val temporario = temporario(ctx)
+        val temporario = runCatching { temporario(ctx) }.onFailure { Log.w(TAG, "Sons: sem como criar o arquivo temporário", it) }.getOrNull() ?: return null
         val copiou = runCatching {
             ctx.contentResolver.openInputStream(uri)!!.use { entrada -> temporario.outputStream().use { saida -> copiarAte(entrada, saida, TAMANHO_MAXIMO) } }
         }.onFailure { Log.w(TAG, "Sons: não deu pra copiar $uri", it) }.isSuccess
