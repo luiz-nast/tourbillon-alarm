@@ -6,7 +6,7 @@ There is also **"talk + walk"**: after STOP, a conversation in English with an A
 
 - **Stack:** Kotlin with Jetpack Compose (Material 3). Camera with CameraX; face and eyes with ML Kit, on the device itself.
 - **Tested on:** Galaxy S24 FE (SM-S721B), Android 16 / One UI 8.5.
-- **Name:** Tourbillon Alarm since 2026-10-31 (before: Nightmare Alarm, and Alarme Implacável at the start). The package `com.implacavel.alarme` and the log tag `Implacavel` stay as they were, so an update keeps the alarms, the sounds and the permissions.
+- **Name:** Tourbillon Alarm (formerly Nightmare Alarm and Alarme Implacável). The package `com.implacavel.alarme` and the log tag `Implacavel` stay as they were, so an update keeps the alarms, the sounds and the permissions.
 - **Language:** user interface, spoken lines and documentation in English; code identifiers, Kotlin file names, constants, the log tag, log messages and code comments in Brazilian Portuguese, by design.
 
 ## What the app does
