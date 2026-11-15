@@ -83,8 +83,6 @@ object Agendador {
         val agora = System.currentTimeMillis()
         agendarEm(ctx, agora + ms, retomada(ctx, reserva = false))
         agendarEm(ctx, agora + ms + RESERVA_MS, retomada(ctx, reserva = true))
-        // O AlarmeService chama a cada 5 s; o limite de 1 aviso por minuto fica no AvisoAoChiron
-        if (Ajustes.emAndamento?.alarme?.deTeste == false) AvisoAoChiron.missaoViva(ctx, agora)
     }
 
     /** Missão cumprida: não há mais o que retomar. */

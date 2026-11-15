@@ -446,12 +446,15 @@ class AlarmeService : Service() {
     }
 
     /**
-     * Enquanto toca: empurra a retomada pra frente (se o app morrer, ela dispara e o alarme volta),
-     * e mantém o processador acordado (quem acende a tela é a AlarmeActivity).
+     * Enquanto toca: empurra a retomada pra frente (se o app morrer, ela dispara e o alarme volta), avisa o Chiron que a
+     * missão está viva (só daqui, com o serviço tocando: avisar antes calaria o relógio com o celular mudo) e
+     * mantém o processador acordado (quem acende a tela é a AlarmeActivity).
      */
     private val renovar = object : Runnable {
         override fun run() {
             Agendador.agendarRetomada(this@AlarmeService)
+            // Chamado a cada 5 s; o limite de 1 aviso por minuto fica no AvisoAoChiron
+            if (Ajustes.emAndamento?.alarme?.deTeste == false) AvisoAoChiron.missaoViva(this@AlarmeService, System.currentTimeMillis())
             processador.acquire(RENOVAR_MS * 12)
             salvarProgresso()
             atualizarNotificacao()
