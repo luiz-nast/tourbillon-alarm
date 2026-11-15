@@ -670,8 +670,7 @@ class AlarmeService : Service() {
         desligarCamera()
         Clima.cancelar() // um callback atrasado do clima não seta o flag depois do fim
         pararOuvinteDaFrase()
-        motor?.desligar()
-        ModeloLocal.liberar()
+        soltarIa()
         _silenciado.value = false
         _saudando.value = false
         _comemorando.value = false
@@ -1165,9 +1164,7 @@ class AlarmeService : Service() {
         aberturaChegou = false
         if (iaBloqueada || !ModeloLocal.disponivel(this)) {
             Log.i(TAG, "Conversa: ${if (iaBloqueada) "o app já caiu neste alarme" else "sem a IA no celular"}, direto pra caminhada")
-            motor?.desligar()
-            motor = null
-            ModeloLocal.liberar()
+            soltarIa()
             aberturaChegou = true // sem abertura: o [decidir] escolhe só a caminhada
             return
         }
@@ -1260,9 +1257,7 @@ class AlarmeService : Service() {
             etapa = EtapaDaManha.CONVERSA
             return continuarManha(primeira)
         }
-        motor?.desligar()
-        motor = null
-        ModeloLocal.liberar()
+        soltarIa()
         if (escolhido == CaminhoDaManha.SO_CAMINHADA) return irPraCaminhada()
         // A missão de 40 min, com o mesmo prazo se a voz travar (e o alto-falante como no alarme de sempre)
         sirene.manterAcordado(false)
@@ -1667,9 +1662,7 @@ class AlarmeService : Service() {
                 if (novas.isNullOrBlank()) Log.w(TAG, "Conversa: a IA não deixou anotações") else Ajustes.guardarMemoriaDaIa(novas)
             }
         }
-        ia?.desligar()
-        motor = null
-        ModeloLocal.liberar() // antes da caminhada: menos memória e menos calor (depois das anotações, na fila do modelo)
+        soltarIa() // antes da caminhada: menos memória e menos calor (depois das anotações, na fila do modelo)
         iaFalando = false
         _conversa.value = _conversa.value?.copy(falaDaIa = falaDeSair(prazoSairDaquiAte()), suaVez = false, pensando = false, perguntandoSeContinua = false, procurando = "")
         irPraCaminhada()
@@ -2124,9 +2117,7 @@ class AlarmeService : Service() {
     /** Alarme novo (ou um que não é mais "conversa + caminhada"): a manhã começa do zero. */
     private fun esquecerManha() {
         rodadaConversa++
-        motor?.desligar()
-        motor = null
-        ModeloLocal.liberar()
+        soltarIa()
         caminho = null
         etapa = null
         conversadoMs = 0
@@ -2172,9 +2163,7 @@ class AlarmeService : Service() {
         desligarSentidos()
         desligarCamera()
         pararOuvinteDaFrase()
-        motor?.desligar()
-        motor = null
-        ModeloLocal.liberar()
+        soltarIa()
         sirene.ondas(false)
         sirene.manterAcordado(false)
         // Cumprido já fica gravado: se o app cair na comemoração, o alarme não volta
