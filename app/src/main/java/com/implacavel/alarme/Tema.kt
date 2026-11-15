@@ -108,12 +108,6 @@ val Tipo = Typography(
 /** Cartão com raio 20; campo, aviso e pílula com 12. */
 val Formas = Shapes(small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(20.dp))
 
-/** Espaços da escala (só 4, 8, 12, 16, 20 e 24) e alturas mínimas. */
-object Medida {
-    val tela = 20.dp; val entreCartoes = 12.dp; val dentroCartao = 16.dp
-    val antesDeSecao = 24.dp; val rotulo = 8.dp; val botao = 56.dp; val alvo = 48.dp
-}
-
 /**
  * Tema do app, que nunca segue o modo claro/escuro do sistema (o dono pediu). A tela do alarme fica com o [Claro]
  * (tons de vermelho; o YouTube da etapa da câmera, um WebView, segue o tema claro da tela e fica claro, pra iluminar o
@@ -121,7 +115,6 @@ object Medida {
  */
 @Composable
 fun TemaImplacavel(escuro: Boolean = false, content: @Composable () -> Unit) {
-    // A escala vale só na tela principal e no editor; a tela do alarme guarda os tamanhos dela por enquanto
     if (escuro) MaterialTheme(colorScheme = Noite, typography = Tipo, shapes = Formas, content = content)
     else MaterialTheme(colorScheme = Claro, content = content)
 }

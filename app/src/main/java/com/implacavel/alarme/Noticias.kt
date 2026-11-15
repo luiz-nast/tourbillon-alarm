@@ -23,14 +23,12 @@ private const val TEXTO_MAX_LETRAS = 500_000
 
 object Noticias {
     private val handler = Handler(Looper.getMainLooper())
-    private var pedidos = 0 // muda a cada [cancelar]: resposta de uma busca velha não chega
 
     /**
      * Busca as manchetes do dia (até [MANCHETES_MAX]) e as metas, ao mesmo tempo, e entrega as duas juntas
      * na thread principal ([aoChegar]), em até uns 10 s. Falhou, vem vazio: a conversa segue sem elas.
      */
     fun buscar(aoChegar: (manchetes: List<String>, metas: String) -> Unit) {
-        val numero = pedidos
         thread(isDaemon = true, name = "noticias") {
             // Numa thread de fundo, um erro sem tratar derrubaria o app (e o alarme): todo erro vira "vazio"
             var metas = ""
@@ -38,13 +36,8 @@ object Noticias {
             val manchetes = runCatching { baixarTexto(ENDERECO_DAS_NOTICIAS)?.let { manchetesDoRss(it) } }.getOrNull().orEmpty()
             buscaDasMetas.join()
             Log.i(TAG, "Conversa: ${manchetes.size} manchetes e metas com ${metas.length} letras")
-            handler.post { if (numero == pedidos) aoChegar(manchetes, metas) }
+            handler.post { aoChegar(manchetes, metas) }
         }
-    }
-
-    /** A busca em curso não entrega mais nada. */
-    fun cancelar() {
-        pedidos++
     }
 
     /** As metas do endereço do local.properties (METAS_URL), em texto simples; sem endereço, em branco. */

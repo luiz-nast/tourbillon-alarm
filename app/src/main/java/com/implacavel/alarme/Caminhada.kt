@@ -204,8 +204,7 @@ class SentidosDaCaminhada {
     }
 
     /** O GPS, os satélites e o acelerômetro estão ligados. */
-    var ligados = false
-        private set
+    private var ligados = false
 
     /**
      * Liga o GPS (um fixo por segundo), os satélites e o acelerômetro, se a localização está permitida ([permitida],
