@@ -57,13 +57,8 @@ por causa do Chiron entra aqui e vale para a manhã também. O que é de cada us
 dela (`temperature` 0,9, para variar as falas), o teto dela (`RESPOSTA_MAX_TOKENS`, 72) e, na CPU, **continua
 funcionando como antes** (só as perguntas de fora voltam vazias).
 
-### A medida do teto (11-08)
-
-Bateria 1b do Chiron (`bateria/saidas/rodada1b-*.jsonl`, campo `"ia"`, 339 respostas do modelo): a maior saída teve
-111 letras (~32 tokens, contando ~3,5 letras por token), com as cercas de código. Desde o `88df146` do Chiron o
-`"conversar"` traz `"fala"` de até 20 palavras: com 20 palavras de 6 letras e as cercas, ~186 letras, ~54 tokens. O teto
-de 64 cabe as duas com folga (o teste `ContratoDoMotorTest` exige 10%). Passou do teto, o JSON sai cortado e o cliente
-usa as regras dele.
+O teto de 64 tokens cabe a maior resposta medida ao Chiron (~54 tokens), com a folga de 10% que o
+`ContratoDoMotorTest` confere. Passou do teto, o JSON sai cortado e o cliente usa as regras dele.
 
 ## Testes pelo cabo (sem som)
 
