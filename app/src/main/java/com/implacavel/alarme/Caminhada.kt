@@ -456,10 +456,9 @@ private fun maisTempo(ms: Long): String = if (ms < 60_000L) "${ms / 1000} MORE S
  */
 @Composable
 private fun MiniTarefaAberta(tarefa: MiniTarefa, agora: Long, onVoltar: () -> Unit) {
-    val resta = ((tarefa.ate - agora).coerceAtLeast(0) + 999) / 1000
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("🔕 Beeps paused", color = AzulCaminhada, fontSize = 30.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
-        Text("%d:%02d to repeat it".format(resta / 60, resta % 60), color = AzulCaminhada.copy(alpha = 0.8f), fontSize = 18.sp)
+        Text("${tempoAndado(tarefa.ate - agora + 999)} to repeat it", color = AzulCaminhada.copy(alpha = 0.8f), fontSize = 18.sp)
         Spacer(Modifier.height(20.dp))
         MiniTarefaDoPrazo(tarefa)
         Spacer(Modifier.height(20.dp))

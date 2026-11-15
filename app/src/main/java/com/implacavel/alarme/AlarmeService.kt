@@ -1041,10 +1041,10 @@ class AlarmeService : Service() {
      */
     private fun ouvirFrase(frase: String, rodada: Int) {
         pararOuvinteDaFrase()
-        ouvinteDaFrase = Ouvinte(
-            this, "frase", aceita = { repetiu(frase, it) },
+        ouvinteDaFrase = ouvirRepeticao(
+            "frase", frase,
             onOuviu = { ouvido ->
-                if (rodada != rodadaVerificacao) return@Ouvinte
+                if (rodada != rodadaVerificacao) return@ouvirRepeticao
                 _verificacao.value = _verificacao.value?.copy(ouvido = ouvido)
                 if (_verificacao.value?.suaVez == true && SystemClock.elapsedRealtime() - vezComecou < PRAZO_FRASE_MS) esperarResposta()
             },
@@ -1057,10 +1057,12 @@ class AlarmeService : Service() {
                     agradecer()
                 }
             },
-            idioma = "en-US",
-            juntar = true, // com pausa no meio da frase, as palavras já ditas continuam valendo
-        ).also { it.comecar() }
+        )
     }
+
+    /** O ouvinte de quem repete a [frase] em inglês, já começado; as falas se juntam, então uma pausa no meio da frase não perde as palavras já ditas. */
+    private fun ouvirRepeticao(nome: String, frase: String, onOuviu: (String) -> Unit, onAceito: () -> Unit, onIndisponivel: () -> Unit) =
+        Ouvinte(this, nome, aceita = { repetiu(frase, it) }, onOuviu, onAceito, onIndisponivel, idioma = "en-US", juntar = true).also { it.comecar() }
 
     /** A vez da pessoa (ou ela acabou de falar): a contagem sem resposta recomeça do zero. */
     private fun esperarResposta() {
@@ -1851,17 +1853,15 @@ class AlarmeService : Service() {
             if (_miniTarefa.value?.aberta != true) return@falar // já fechou (o tempo, voltou, andou) ou a música voltou
             _miniTarefa.value = _miniTarefa.value?.copy(suaVez = true)
             ouvinteDaMiniTarefa?.parar()
-            ouvinteDaMiniTarefa = Ouvinte(
-                this, "mini tarefa", aceita = { repetiu(frase, it) },
+            ouvinteDaMiniTarefa = ouvirRepeticao(
+                "mini tarefa", frase,
                 onOuviu = { ouvido -> _miniTarefa.value = _miniTarefa.value?.copy(ouvido = ouvido) },
                 onAceito = { miniTarefaFeita() },
                 onIndisponivel = {
                     // Depois de [comecar] (pode avisar de dentro dele): a tela "sua vez" sem ninguém ouvindo enganaria
                     handler.post { fecharMiniTarefa("sem reconhecimento de voz") }
                 },
-                idioma = "en-US",
-                juntar = true,
-            ).also { it.comecar() }
+            )
         }
     }
 
