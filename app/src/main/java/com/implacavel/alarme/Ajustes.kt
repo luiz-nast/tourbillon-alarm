@@ -17,8 +17,7 @@ const val SOBRE_MIM_MAX_LETRAS = 600
 /**
  * Ajustes e estado que precisam sobreviver ao processo: o volume da voz, os tempos dos despertadores ([Tempos]), o
  * que o dono contou de si e o que a IA anotou dele na última conversa ([memoriaDaIa]), e o alarme em andamento (e onde a
- * missão dele está). Gravado em [prefsProtegidas], como os alarmes. Os sons ficam em [Sons] (a música única de antes,
- * "musicaUri", é migrada pra lá).
+ * missão dele está). Gravado em [prefsProtegidas], como os alarmes. Os sons ficam em [Sons].
  */
 object Ajustes {
     private lateinit var prefs: SharedPreferences

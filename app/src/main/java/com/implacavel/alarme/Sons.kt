@@ -11,13 +11,11 @@
 package com.implacavel.alarme
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,7 +48,6 @@ object Sons {
         ctx.createDeviceProtectedStorageContext().cacheDir.listFiles { f -> f.name.startsWith("chegando") }?.forEach { it.delete() }
         _padrao.value = prefs.getString("padrao", null)
         reler()
-        migrarMusicaAntiga(ctx)
     }
 
     /** Relê a pasta (um som pode ter chegado pelo cabo). O padrão não muda: um arquivo que some por um instante (cópia pelo cabo) não o apaga. */
@@ -141,23 +138,6 @@ object Sons {
             if (it.moveToFirst()) it.getString(0) else null
         }
     }.getOrNull() ?: uri.lastPathSegment
-
-    /**
-     * A música das versões anteriores (uma URI do seletor do sistema, em Ajustes) vira o padrão da biblioteca: copiada
-     * uma vez e esquecida. Se não der pra ler agora (antes do primeiro desbloqueio, por exemplo), fica pra próxima vez.
-     */
-    private fun migrarMusicaAntiga(ctx: Context) {
-        val antigos = ctx.prefsProtegidas("ajustes")
-        val uri = antigos.getString("musicaUri", null) ?: return
-        val som = adicionar(ctx, uri.toUri()) ?: return
-        escolherPadrao(som.nome)
-        runCatching { ctx.contentResolver.releasePersistableUriPermission(uri.toUri(), Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-        antigos.edit(commit = true) {
-            remove("musicaUri")
-            remove("musicaNome")
-        }
-        Log.i(TAG, "Sons: a música de antes virou o padrão da biblioteca: ${som.nome}")
-    }
 }
 
 /** Um nome de arquivo seguro pra biblioteca: sem barras, sem caracteres de controle, sem "." ou ".." e sem ficar vazio. */
