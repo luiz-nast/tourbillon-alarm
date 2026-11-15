@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Diálogo pra criar ou editar um alarme. Não grava nada: devolve o alarme pronto em [onSalvar]. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,10 +70,12 @@ fun EditorAlarme(
     val sons by Sons.lista.collectAsStateWithLifecycle()
     val padrao by Sons.padrao.collectAsStateWithLifecycle()
     val tempos by Ajustes.tempos.collectAsStateWithLifecycle()
+    val escopo = rememberCoroutineScope()
     val adicionarSom = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val novoSom = Sons.adicionar(ctx, uri)
-        if (novoSom == null) Toast.makeText(ctx, "Could not read that file.", Toast.LENGTH_LONG).show() else som = novoSom.nome
+        if (uri != null) escopo.launch {
+            val novoSom = withContext(Dispatchers.IO) { Sons.adicionar(ctx, uri) }
+            if (novoSom == null) Toast.makeText(ctx, "Could not read that file.", Toast.LENGTH_LONG).show() else som = novoSom.nome
+        }
     }
 
     Dialog(onDismissRequest = onCancelar, properties = DialogProperties(usePlatformDefaultWidth = false)) {

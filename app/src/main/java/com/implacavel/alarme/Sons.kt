@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 
 object Sons {
     /** Um som da biblioteca: o [nome] do arquivo (o que a tela mostra e o alarme guarda) e o [arquivo]. */
@@ -61,26 +63,26 @@ object Sons {
         if (_padrao.value != null && existente(_padrao.value!!) == null) escolherPadrao(null)
     }
 
-    /** Copia o áudio em [uri] pra biblioteca (com o nome do arquivo, sem repetir) e devolve o som; null se não deu pra ler. */
+    /**
+     * Copia o áudio em [uri] pra biblioteca ([receber]: com o nome do arquivo, sem repetir, até [TAMANHO_MAXIMO]) e devolve
+     * o som; null se não deu pra ler. Espera o que o provedor demorar (um app de nuvem baixa o arquivo na leitura): chame
+     * fora da thread da tela.
+     */
     fun adicionar(ctx: Context, uri: Uri): Som? {
-        val nome = nomeLivre(nomeSeguro(nomeDoArquivo(ctx, uri)), _lista.value.map { it.nome })
-        val destino = File(pasta, nome)
+        val temporario = temporario(ctx)
         val copiou = runCatching {
-            ctx.contentResolver.openInputStream(uri)!!.use { entrada -> destino.outputStream().use { saida -> entrada.copyTo(saida) } }
-            destino.length() > 0
-        }.onFailure { Log.w(TAG, "Sons: não deu pra copiar $uri", it) }.getOrDefault(false)
+            ctx.contentResolver.openInputStream(uri)!!.use { entrada -> temporario.outputStream().use { saida -> copiarAte(entrada, saida, TAMANHO_MAXIMO) } }
+        }.onFailure { Log.w(TAG, "Sons: não deu pra copiar $uri", it) }.isSuccess
         if (!copiou) {
-            destino.delete()
+            temporario.delete()
             return null
         }
-        Log.i(TAG, "Sons: copiado pra biblioteca: $nome (${destino.length() / 1024} KB)")
-        reler()
-        return Som(nome, destino)
+        return receber(temporario, nomeDoArquivo(ctx, uri))
     }
 
     /**
-     * Um som que chegou de fora (o Mistral, pela [FonteDeSons]), já gravado em [temporario] na mesma partição:
-     * vira um som da biblioteca com o [nomeOriginal] (seguro, sem repetir). Vazio, é jogado fora.
+     * Um som que chegou de fora (o Mistral, pela [FonteDeSons], ou o seletor, por [adicionar]), já gravado em [temporario]
+     * na mesma partição: vira um som da biblioteca com o [nomeOriginal] (seguro, sem repetir). Vazio ou grande demais, é jogado fora.
      */
     @Synchronized
     fun receber(temporario: File, nomeOriginal: String?): Som? {
@@ -95,7 +97,7 @@ object Sons {
             Log.w(TAG, "Sons: não deu pra guardar o som que chegou: $nome")
             return null
         }
-        Log.i(TAG, "Sons: chegou do Mistral: $nome (${destino.length() / 1024} KB)")
+        Log.i(TAG, "Sons: entrou na biblioteca: $nome (${destino.length() / 1024} KB)")
         reler()
         return Som(nome, destino)
     }
@@ -171,4 +173,16 @@ fun nomeLivre(nome: String, existentes: Collection<String>): String {
     val base = nome.substring(0, ponto)
     val extensao = nome.substring(ponto)
     return generateSequence(2) { it + 1 }.map { "$base ($it)$extensao" }.first { it !in existentes }
+}
+
+/** Copia [entrada] em [saida] até passar de [limite] bytes (um pouco além já basta: [Sons.receber] recusa) ou acabar. */
+internal fun copiarAte(entrada: InputStream, saida: OutputStream, limite: Long) {
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    var total = 0L
+    while (total <= limite) {
+        val lidos = entrada.read(buffer)
+        if (lidos < 0) return
+        saida.write(buffer, 0, lidos)
+        total += lidos
+    }
 }

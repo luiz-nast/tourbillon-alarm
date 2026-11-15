@@ -44,7 +44,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.ZonedDateTime
 
 /** Tela principal, em duas páginas: os alarmes (à esquerda) e o resto (permissões, sons, testes, ajustes e a IA). */
@@ -81,7 +83,7 @@ private fun TelaPrincipal() {
     val agora = agoraACada(15_000) // pros textos "rings in 9 h 12 min"
     var editando by remember { mutableStateOf<Alarme?>(null) }
     val paginas = rememberPagerState { PAGINAS.size }
-    val rolar = rememberCoroutineScope()
+    val escopo = rememberCoroutineScope()
 
     // Permissões e a IA do celular: relidas toda vez que a tela volta (do diálogo do sistema ou das Configurações)
     val poderes = lidoAoVoltar { Poder.entries.associateWith { it.liberado(ctx) } }
@@ -105,7 +107,9 @@ private fun TelaPrincipal() {
     }
 
     val adicionarSom = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null && Sons.adicionar(ctx, uri) == null) Toast.makeText(ctx, "Could not read that file.", Toast.LENGTH_LONG).show()
+        if (uri != null) escopo.launch {
+            if (withContext(Dispatchers.IO) { Sons.adicionar(ctx, uri) } == null) Toast.makeText(ctx, "Could not read that file.", Toast.LENGTH_LONG).show()
+        }
     }
 
     Scaffold(
@@ -132,7 +136,7 @@ private fun TelaPrincipal() {
                 PAGINAS.forEachIndexed { i, titulo ->
                     Tab(
                         selected = paginas.currentPage == i,
-                        onClick = { rolar.launch { paginas.animateScrollToPage(i) } },
+                        onClick = { escopo.launch { paginas.animateScrollToPage(i) } },
                         text = { Text(titulo, fontWeight = if (paginas.currentPage == i) FontWeight.Bold else FontWeight.Normal) },
                     )
                 }

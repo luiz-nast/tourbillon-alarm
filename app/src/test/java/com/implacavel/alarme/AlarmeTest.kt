@@ -6,6 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -74,6 +75,16 @@ class AlarmeTest {
         assertEquals(1, falhas)
         assertEquals(emptyList<Alarme>(), lerAlarmes("lixo"))
         assertEquals(emptyList<Alarme>(), lerAlarmes(null))
+    }
+
+    @Test
+    fun copiaDeSomParaDepoisDoLimite() {
+        val grande = ByteArrayOutputStream()
+        copiarAte(ByteArray(100_000).inputStream(), grande, limite = 10_000)
+        assertTrue(grande.size() in 10_001..99_999) // passou do limite (o receber recusa) e não leu o resto
+        val pequeno = ByteArrayOutputStream()
+        copiarAte(ByteArray(5_000).inputStream(), pequeno, limite = 10_000)
+        assertEquals(5_000, pequeno.size())
     }
 
     @Test
