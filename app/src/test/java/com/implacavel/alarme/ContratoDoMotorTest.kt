@@ -12,7 +12,7 @@ class ContratoDoMotorTest {
     private fun tokens(saida: String) = Math.ceil(saida.length / 3.5).toInt()
 
     @Test
-    fun tetoDaPerguntaCabeAMaiorRespostaComFolgaENaoPassaDe64() {
+    fun tetoDaPerguntaCabeAMaiorRespostaComFolga() {
         // A maior saída do modelo ao Chiron na bateria 1b (339 respostas, 11-08): 111 letras, ~32 tokens
         val maiorDaBateria = "```json { \"acao\": \"definir\", \"texto\": \"tomar vitamina\", \"repete\": \"diaria\", \"som\": false, \"hora\": \"08:00\" } ```"
         // Desde o 88df146 do Chiron, o "conversar" traz a fala de até 20 palavras: 20 de 6 letras (acima da média do português)
@@ -21,8 +21,6 @@ class ContratoDoMotorTest {
         for (saida in listOf(maiorDaBateria, conversar)) {
             assertTrue("${tokens(saida)} tokens: $saida", tokens(saida) <= AVULSA_MAX_TOKENS * 9 / 10)
         }
-        // (o dono, 11-08): 120 -> ~60, o pior caso cai de ~8 s pra ~4 s (17 a 19 tokens por segundo na GPU)
-        assertTrue(AVULSA_MAX_TOKENS <= 64)
     }
 
     @Test

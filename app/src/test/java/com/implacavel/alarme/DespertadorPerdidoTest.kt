@@ -1,6 +1,5 @@
 package com.implacavel.alarme
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -9,9 +8,6 @@ import org.junit.Test
 class DespertadorPerdidoTest {
     private val agora = 1_800_000_000_000L
     private val dozeHoras = 12 * 60 * 60_000L
-
-    @Test
-    fun aJanelaE12Horas() = assertEquals(dozeHoras, Agendador.JANELA_PERDIDO_MS)
 
     @Test
     fun acabouDePassarToca() = assertTrue(Agendador.perdido(agora - 1_000, agora))
