@@ -155,7 +155,7 @@ class TesteDaIa : BroadcastReceiver() {
                 }
                 Log.i(TAG, "IA teste: memória do app depois da conversa ${memoriaDoAppMb(ctx)} MB")
             }
-            // As anotações do fim da conversa, como o alarme faz ([MotorDaConversa.anotar])
+            // As anotações do fim da conversa, como o alarme faz ([ModeloLocal.anotar])
             if (SystemClock.elapsedRealtime() - inicio < ANOTAR_ATE_MS) {
                 val antes = SystemClock.elapsedRealtime()
                 val notas = ModeloLocal.anotarCom(engine, transcricao, LocalDate.now())

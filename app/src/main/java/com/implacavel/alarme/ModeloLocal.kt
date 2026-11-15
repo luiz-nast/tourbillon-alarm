@@ -58,18 +58,35 @@ private val AMOSTRAGEM = SamplerConfig(topK = 64, topP = 0.95, temperature = 0.9
 /** Quem anota é mais certinho: temperatura baixa. */
 private val AMOSTRAGEM_DAS_ANOTACOES = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.3)
 
+/** Uma fala da conversa, da IA ([daIa]) ou da pessoa. */
+data class Turno(val daIa: Boolean, val texto: String)
+
 /**
- * Uma conversa com o Gemma no celular ([MotorDaConversa]): a [instrucao] do treinador vira a instrução do
- * sistema, a [abertura] é o primeiro pedido, e o histórico fica no próprio modelo (não precisa mandar tudo de novo). Se a IA sugerir descansar ou
- * disser que o alarme acabou ([respostaSegura]), vem o [falaNaoNegocia] no lugar. Se ela pedir uma busca
- * ([consultaDaBusca]), a [troca] busca ([Pesquisa]) e manda o resultado antes de devolver a fala.
+ * O "cérebro" da conversa da manhã: o Gemma no celular, sem internet (só a busca que ele pede, [Pesquisa], e as manchetes
+ * vão pela rede). Recebe o que a pessoa disse e devolve a próxima fala, só texto; a voz, a vez de cada um, o relógio e o fim
+ * são do [AlarmeService]. Sem o modelo no celular, o despertador "conversa + caminhada" vai direto pra caminhada. A
+ * [instrucao] do treinador ([instrucaoDoTreinador]) vira a instrução do sistema, a [abertura] é o primeiro pedido, e o
+ * histórico fica no próprio modelo (não precisa mandar tudo de novo).
+ *
+ * [aquecer] lê a instrução antes da hora, [abrir] pede a primeira fala, [responder] manda o que a pessoa disse, [retomar]
+ * continua depois de uma interrupção. Cada pedido chama o `aoResponder` uma vez só, na thread principal, com a fala pronta
+ * pra voz ([limparFala]; se a IA sugerir descansar ou disser que o alarme acabou, [respostaSegura], vem a [FALA_NAO_NEGOCIA]
+ * no lugar) ou null (sem resposta). Um pedido novo toma o lugar do que ainda não respondeu; depois de [cancelar] ou
+ * [desligar], resposta atrasada não chega em ninguém. [descartar]: a última resposta, que já chegou, não vai ser dita (a
+ * pessoa voltou a falar). O construtor e os pedidos voltam na hora: carregar o modelo e gerar a fala é em outra thread. O
+ * motor pode demorar ou nem responder: quem corta a espera é o AlarmeService ([RESPOSTA_IA_MAX_MS] por fala, e o prazo da
+ * decisão depois do bom dia pra abertura).
+ *
+ * No meio de um pedido a IA pode pedir uma busca na internet ([consultaDaBusca]): a [troca] busca ([Pesquisa]), avisa
+ * [aoProcurar] (a tela mostra "Looking up…") e manda o resultado antes de devolver a fala. No fim da conversa, [anotar]
+ * pede a ela as anotações sobre a pessoa pra manhã seguinte ([pedidoDeAnotacoes]; valem um dia, [MEMORIA_VALIDA_MS]).
  *
  * Um pedido cancelado não para o modelo: ele termina de escrever e a resposta é jogada fora. Parar no meio
  * (`cancelProcess`) estraga a conversa pra sempre: medido no S24 FE (`TesteDaIa --ez cancelar true`), todo pedido
  * depois dele falha com "CANCELLED", cancelando escrevendo ou ainda lendo, na hora ou meio segundo depois. E a
  * resposta jogada fora fica na memória da IA: o pedido seguinte avisa que ele não ouviu ([pedidoDepoisDeInterrompida]).
  */
-class ModeloLocal(ctx: Context, private val instrucao: String, private val abertura: String, private val falaNaoNegocia: String) : MotorDaConversa {
+class ModeloLocal(ctx: Context, private val instrucao: String, private val abertura: String) {
 
     companion object {
         private val handler = Handler(Looper.getMainLooper())
@@ -306,37 +323,38 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
     @Volatile private var desligado = false
     private var buscas = 0 // buscas feitas nesta conversa (thread do modelo), até [BUSCAS_MAX]
 
-    override var aoProcurar: ((String) -> Unit)? = null
+    /** A IA pediu uma busca e o motor está procurando isto: chamado na thread principal, antes da fala desse pedido. */
+    var aoProcurar: ((consulta: String) -> Unit)? = null
 
     /**
      * Lê a instrução já (uns 9 s no S24 FE, com as anotações e as manchetes: ~1200 tokens), ainda durante a música, pra
      * abertura sair em uns 3 s no fim do bom dia. Pode chamar de novo: não lê duas vezes.
      */
-    override fun aquecer() {
+    fun aquecer() {
         trabalho.execute { if (!desligado) runCatching { conversaPronta() }.onFailure { Log.w(TAG, "IA do celular: não leu a instrução antes (${it.javaClass.simpleName})") } }
     }
 
-    override fun abrir(aoResponder: (String?) -> Unit) = perguntar(abertura, aoResponder)
+    fun abrir(aoResponder: (String?) -> Unit) = perguntar(abertura, aoResponder)
 
-    override fun responder(fala: String, aoResponder: (String?) -> Unit) = perguntar(fala, aoResponder)
+    fun responder(fala: String, aoResponder: (String?) -> Unit) = perguntar(fala, aoResponder)
 
-    override fun retomar(aoResponder: (String?) -> Unit) = perguntar(if (conversa == null) abertura else PEDIDO_DE_RETOMADA, aoResponder)
+    fun retomar(aoResponder: (String?) -> Unit) = perguntar(if (conversa == null) abertura else PEDIDO_DE_RETOMADA, aoResponder)
 
     /** O pedido em curso fica sem resposta (o modelo termina de escrever, e a resposta vai fora). A conversa fica. */
-    override fun cancelar() {
+    fun cancelar() {
         // Já respondido e ainda não entregue: a resposta está na memória dele, e a pessoa não vai ouvir
         if (respondido == pedidos && entregue != pedidos) naoOuvida = ultimaFala
         pedidos++
     }
 
     /** A resposta que já chegou não vai ser dita: ela está na memória da IA, e o próximo pedido avisa que ele não ouviu. */
-    override fun descartar() {
+    fun descartar() {
         naoOuvida = ultimaFala
         cancelar()
     }
 
     /** Fim desta conversa: nenhum pedido sai nem responde mais. O modelo fica carregado até o [liberar]. */
-    override fun desligar() {
+    fun desligar() {
         if (desligado) return
         desligado = true
         cancelar()
@@ -347,10 +365,12 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
     }
 
     /**
-     * As anotações pra manhã seguinte, depois do que estiver em curso na thread do modelo (uma resposta jogada fora
-     * termina de escrever antes). A conversa da manhã fecha antes de anotar: as duas não ficam na memória juntas.
+     * Fim da conversa: a IA escreve as anotações pra manhã seguinte a partir da [transcricao] de hoje (só de hoje: nada se
+     * acumula); [aoTerminar] recebe as notas, limpas ([limparAnotacoes]), ou null se não deu, na thread principal. Roda
+     * depois do que estiver em curso na thread do modelo (uma resposta jogada fora termina de escrever antes). A conversa
+     * da manhã fecha antes de anotar: as duas não ficam na memória juntas, e depois disto ela não responde mais (vale como [desligar]).
      */
-    override fun anotar(transcricao: List<Turno>, aoTerminar: (String?) -> Unit) {
+    fun anotar(transcricao: List<Turno>, aoTerminar: (String?) -> Unit) {
         if (desligado) return aoTerminar(null)
         desligado = true
         cancelar()
@@ -410,7 +430,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         val limpa = limparFala(corpo).ifEmpty { null }
         val segura = limpa == null || respostaSegura(limpa)
         if (!segura) Log.i(TAG, "Conversa: a IA sugeriu descansar ou parar, vai a frase fixa no lugar")
-        val texto = if (segura) limpa?.let { comVeredito(veredito, it) } else falaNaoNegocia
+        val texto = if (segura) limpa?.let { comVeredito(veredito, it) } else FALA_NAO_NEGOCIA
         Log.i(TAG, "Conversa: ${if (texto != null) "IA respondeu (${texto.length} letras)" else "IA sem resposta"} em $demora ms")
         aoResponder(texto)
     }

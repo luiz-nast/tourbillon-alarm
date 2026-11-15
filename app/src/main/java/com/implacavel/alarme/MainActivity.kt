@@ -87,7 +87,7 @@ private fun TelaPrincipal() {
 
     // Permissões e a IA do celular: relidas toda vez que a tela volta (do diálogo do sistema ou das Configurações)
     val poderes = lidoAoVoltar { Poder.entries.associateWith { it.liberado(ctx) } }
-    val iaPronta = lidoAoVoltar { MotorDaConversa.disponivel(ctx) }
+    val iaPronta = lidoAoVoltar { ModeloLocal.disponivel(ctx) }
 
     // Permissões com diálogo do sistema (notificação, microfone, câmera, localização). Se o usuário já
     // negou, o sistema não pergunta de novo; aí, se o pedido veio de um botão "Liberar", abre as Configurações.
@@ -188,7 +188,7 @@ private fun TelaPrincipal() {
                                 onTestarCaminhada = {
                                     // Sem a localização, a caminhada não conta: pede no diálogo agora (sem abrir as Configurações;
                                     // a tela da caminhada também tem o botão de liberar)
-                                    val comIa = MotorDaConversa.disponivel(ctx)
+                                    val comIa = ModeloLocal.disponivel(ctx)
                                     val semLocalizacao = Poder.LOCALIZACAO.permissaoFaltando(ctx) != null
                                     if (semLocalizacao) pedirPermissao.launch(Poder.LOCALIZACAO.pedido)
                                     Agendador.agendarTeste(ctx, 10, caminhada = true)

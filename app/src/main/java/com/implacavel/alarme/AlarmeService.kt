@@ -50,7 +50,7 @@ import java.time.LocalTime
  *   DESLIGAR, pra um defeito não prender ninguém num alarme que nunca desliga. Numa queda só,
  *   o desafio continua valendo;
  * - no despertador "conversa + caminhada" ([Alarme.caminhada]), depois do bom dia vêm a conversa com a IA
- *   ([MotorDaConversa], no celular) e a caminhada pelo GPS, chova ou faça sol, com ou sem internet (sem a IA,
+ *   ([ModeloLocal], no celular) e a caminhada pelo GPS, chova ou faça sol, com ou sem internet (sem a IA,
  *   direto pra caminhada). Quem decide tudo são os relógios daqui: a IA só produz o texto das falas.
  *
  * Comandos pela action do Intent, cada um com uma função no companion: tocar, encerrar sem missão (defeito ou cabo),
@@ -385,7 +385,7 @@ class AlarmeService : Service() {
     // volta, como o anel da câmera; só um alarme novo começa do zero ([esquecerManha])
     private var caminho: CaminhoDaManha? = null // decidido depois do primeiro bom dia
     private var etapa: EtapaDaManha? = null
-    private var motor: MotorDaConversa? = null // a IA da conversa, com o histórico
+    private var motor: ModeloLocal? = null // a IA da conversa, com o histórico
     private var iaBloqueada = false // o app já caiu neste alarme: a IA do celular (que pesa) fica de fora
     private var abertura: String? = null // a primeira fala da IA (null = não veio)
     private var aberturaChegou = false
@@ -433,7 +433,7 @@ class AlarmeService : Service() {
     private var preparoExtraUsado = false // a mini tarefa do prazo já deu o extra desta manhã
     private var miniTarefaRetirada = false // ele andou depois do primeiro bipe: a mini tarefa não aparece mais
     private val fraseDaMiniTarefa by lazy { fraseDaMiniTarefa(LocalDate.now()) }
-    private val transcricao = mutableListOf<Turno>() // a conversa de hoje, pras anotações da IA no fim ([MotorDaConversa.anotar])
+    private val transcricao = mutableListOf<Turno>() // a conversa de hoje, pras anotações da IA no fim ([ModeloLocal.anotar])
 
     /** Os tempos deste alarme ([Tempos]): a foto dos ajustes de quando ele tocou ([EmAndamento.tempos]), lida em [onCreate] e [iniciar]. */
     private fun tempos(): Tempos = _temposDoAlarme.value
@@ -442,7 +442,7 @@ class AlarmeService : Service() {
     private fun soltarIa() {
         motor?.desligar()
         motor = null
-        MotorDaConversa.liberar()
+        ModeloLocal.liberar()
     }
 
     /**
@@ -671,7 +671,7 @@ class AlarmeService : Service() {
         Clima.cancelar() // um callback atrasado do clima não seta o flag depois do fim
         pararOuvinteDaFrase()
         motor?.desligar()
-        MotorDaConversa.liberar()
+        ModeloLocal.liberar()
         _silenciado.value = false
         _saudando.value = false
         _comemorando.value = false
@@ -753,13 +753,13 @@ class AlarmeService : Service() {
     /**
      * Começa a carregar o modelo da IA (o despertador "conversa + caminhada", sem a IA bloqueada) e grava que
      * ela foi tentada neste alarme ([Ajustes.iaTentadaEm]). Já carregado ou carregando, não faz nada de novo. Ainda
-     * com a música, também busca as notícias e deixa a IA lendo a instrução ([MotorDaConversa.aquecer], uns 9 s): no
+     * com a música, também busca as notícias e deixa a IA lendo a instrução ([ModeloLocal.aquecer], uns 9 s): no
      * fim do bom dia, só falta a abertura (uns 3 s). Sem o motor pronto no STOP, [prepararManha] faz tudo de novo.
      */
     private fun prepararIa(alarme: Alarme, em: EmAndamento) {
-        if (!comConversaECaminhada(alarme) || iaBloqueada || !MotorDaConversa.disponivel(this)) return
+        if (!comConversaECaminhada(alarme) || iaBloqueada || !ModeloLocal.disponivel(this)) return
         Ajustes.iaTentadaEm = em.desde
-        MotorDaConversa.preparar(this)
+        ModeloLocal.preparar(this)
         if (motor != null) return
         val rodada = rodadaConversa
         Noticias.buscar { manchetes, metas ->
@@ -1157,7 +1157,7 @@ class AlarmeService : Service() {
 
     /**
      * No STOP, enquanto a voz dá bom dia: na primeira vez, pede a abertura da IA (o motor já pronto desde a música,
-     * [prepararIa], ou, sem ele, busca as notícias e as metas e cria um). Sem a IA ([MotorDaConversa.disponivel]),
+     * [prepararIa], ou, sem ele, busca as notícias e as metas e cria um). Sem a IA ([ModeloLocal.disponivel]),
      * não busca nada: a manhã vai direto pra caminhada. Com o caminho já decidido (a música voltou no meio), também não.
      */
     private fun prepararManha() {
@@ -1165,17 +1165,17 @@ class AlarmeService : Service() {
         if (caminho != null) return
         abertura = null
         aberturaChegou = false
-        if (iaBloqueada || !MotorDaConversa.disponivel(this)) {
+        if (iaBloqueada || !ModeloLocal.disponivel(this)) {
             Log.i(TAG, "Conversa: ${if (iaBloqueada) "o app já caiu neste alarme" else "sem a IA no celular"}, direto pra caminhada")
             motor?.desligar()
             motor = null
-            MotorDaConversa.liberar()
+            ModeloLocal.liberar()
             aberturaChegou = true // sem abertura: o [decidir] escolhe só a caminhada
             return
         }
         Ajustes.emAndamento?.let { Ajustes.iaTentadaEm = it.desde }
         val rodada = rodadaConversa
-        val pedirAbertura = { ia: MotorDaConversa ->
+        val pedirAbertura = { ia: ModeloLocal ->
             ia.abrir { fala ->
                 if (rodada != rodadaConversa) return@abrir
                 abertura = fala
@@ -1200,10 +1200,11 @@ class AlarmeService : Service() {
      * anotações da última conversa, se ainda valem ([Ajustes.memoriaDaIaValida]); null sem o modelo. Quando ela pede uma busca, a tela
      * mostra o que ela procura e a voz avisa ([FALA_PROCURAR]), pra espera não parecer travada.
      */
-    private fun criarMotor(manchetes: List<String>, metas: String): MotorDaConversa? {
+    private fun criarMotor(manchetes: List<String>, metas: String): ModeloLocal? {
+        if (!ModeloLocal.disponivel(this)) return null
         val memoria = Ajustes.memoriaDaIaValida() // só a última conversa, e só por um dia
         val instrucao = instrucaoDoTreinador(manchetes, metas, LocalTime.now(), Ajustes.sobreMim.value, memoria, listaDePalavras(Ajustes.palavras.value))
-        val ia = MotorDaConversa.criar(this, instrucao, pedidoDeAbertura(manchetes, memoria), FALA_NAO_NEGOCIA) ?: return null
+        val ia = ModeloLocal(this, instrucao, pedidoDeAbertura(manchetes, memoria))
         // O mesmo motor segue depois de a música voltar (a rodada muda): basta a conversa estar esperando a IA
         ia.aoProcurar = { consulta ->
             val c = _conversa.value
@@ -1263,7 +1264,7 @@ class AlarmeService : Service() {
         }
         motor?.desligar()
         motor = null
-        MotorDaConversa.liberar()
+        ModeloLocal.liberar()
         if (escolhido == CaminhoDaManha.SO_CAMINHADA) return irPraCaminhada()
         // A missão de 40 min, com o mesmo prazo se a voz travar (e o alto-falante como no alarme de sempre)
         sirene.manterAcordado(false)
@@ -1288,7 +1289,7 @@ class AlarmeService : Service() {
 
     /**
      * A conversa começa com a [primeira] fala da IA ou, sem ela, volta depois da música, com a IA retomando
-     * ([MotorDaConversa.retomar]). A [escuta] liga já, e fica ligada até a conversa acabar ou a música voltar.
+     * ([ModeloLocal.retomar]). A [escuta] liga já, e fica ligada até a conversa acabar ou a música voltar.
      */
     private fun abrirConversa(primeira: String?) {
         val alarme = _tocando.value ?: return
@@ -1655,7 +1656,7 @@ class AlarmeService : Service() {
 
     /**
      * Fim da conversa (meta cumprida, a pessoa não quis mais, ou a IA ou o reconhecimento de voz falharam): a IA
-     * anota o que soube dele pra manhã seguinte ([MotorDaConversa.anotar], se ele falou alguma coisa), o modelo sai da
+     * anota o que soube dele pra manhã seguinte ([ModeloLocal.anotar], se ele falou alguma coisa), o modelo sai da
      * memória e vem a caminhada ([irPraCaminhada]). As anotações ficam prontas em segundo plano, já na caminhada.
      */
     private fun terminarConversa(motivo: String) {
@@ -1672,7 +1673,7 @@ class AlarmeService : Service() {
         }
         ia?.desligar()
         motor = null
-        MotorDaConversa.liberar() // antes da caminhada: menos memória e menos calor (depois das anotações, na fila do modelo)
+        ModeloLocal.liberar() // antes da caminhada: menos memória e menos calor (depois das anotações, na fila do modelo)
         iaFalando = false
         _conversa.value = _conversa.value?.copy(falaDaIa = falaDeSair(prazoSairDaquiAte()), suaVez = false, pensando = false, perguntandoSeContinua = false, procurando = "")
         irPraCaminhada()
@@ -2005,8 +2006,8 @@ class AlarmeService : Service() {
         sirene.manterAcordado(true)
         if (motor != null) return abrirConversa(null)
         _conversa.value = Conversa(falaDaIa = "", suaVez = false, pensando = true, conversadoMs = 0, metaMs = metaDaConversa(alarme))
-        if (iaBloqueada || !MotorDaConversa.disponivel(this)) return terminarConversa("sem a IA pra voltar")
-        MotorDaConversa.preparar(this)
+        if (iaBloqueada || !ModeloLocal.disponivel(this)) return terminarConversa("sem a IA pra voltar")
+        ModeloLocal.preparar(this)
         val rodada = rodadaConversa
         var foi = false // a abertura e o prazo dela chegando os dois: só o primeiro vale
         val chegou: (String?) -> Unit = { fala ->
@@ -2131,7 +2132,7 @@ class AlarmeService : Service() {
         rodadaConversa++
         motor?.desligar()
         motor = null
-        MotorDaConversa.liberar()
+        ModeloLocal.liberar()
         caminho = null
         etapa = null
         conversadoMs = 0
@@ -2179,7 +2180,7 @@ class AlarmeService : Service() {
         pararOuvinteDaFrase()
         motor?.desligar()
         motor = null
-        MotorDaConversa.liberar()
+        ModeloLocal.liberar()
         sirene.ondas(false)
         sirene.manterAcordado(false)
         // Cumprido já fica gravado: se o app cair na comemoração, o alarme não volta
