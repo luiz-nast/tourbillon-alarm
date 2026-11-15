@@ -315,10 +315,10 @@ class AlarmeService : Service() {
          */
         val temposDoAlarme: StateFlow<Tempos> = _temposDoAlarme.asStateFlow()
 
-        /** A fase do teste que a tela do alarme mostra em [agora] ([faseDoTeste]), pelo que o serviço publica; null na música, no bom dia e na comemoração. */
-        fun faseAgora(agora: Long = SystemClock.elapsedRealtime()): FaseDoTeste? =
+        /** A fase do teste que a tela do alarme mostra em [agora] ([faseDaManha]), pelo que o serviço publica; null na música, no bom dia e na comemoração. */
+        fun faseAgora(agora: Long = SystemClock.elapsedRealtime()): FaseDaManha? =
             if (!silenciado.value || saudando.value || comemorando.value) null
-            else faseDoTeste(
+            else faseDaManha(
                 conversa = conversa.value != null, caminhada = caminhada.value != null, noPrazo = caminhada.value?.let { agora < it.prazoAte } == true,
                 verificacao = verificacao.value != null, metadeVerificada = metadeVerificada.value, naCamera = !comCaminhada.value,
             )
@@ -358,8 +358,8 @@ class AlarmeService : Service() {
         /** O botão das ondas na tela da caminhada: [ligadas] ou mudas, nesta manhã. */
         fun ondas(ctx: Context, ligadas: Boolean) { ctx.startService(comando(ctx, ACAO_ONDAS).putExtra(EXTRA_LIGADAS, ligadas)) }
 
-        /** Os botões "Back" e "Forward" de um alarme de teste: a manhã pula pra [fase] ([FaseDoTeste]). Num alarme de verdade, nada. */
-        fun irPraFase(ctx: Context, fase: FaseDoTeste) { ctx.startService(comando(ctx, ACAO_FASE).putExtra(EXTRA_FASE, fase.name)) }
+        /** Os botões "Back" e "Forward" de um alarme de teste: a manhã pula pra [fase] ([FaseDaManha]). Num alarme de verdade, nada. */
+        fun irPraFase(ctx: Context, fase: FaseDaManha) { ctx.startService(comando(ctx, ACAO_FASE).putExtra(EXTRA_FASE, fase.name)) }
 
         /** O botão da mini tarefa na tela da caminhada ([abrir]) e o "voltar" da tela dela (fechar, sem o prazo a mais). */
         fun miniTarefa(ctx: Context, abrir: Boolean) { ctx.startService(comando(ctx, ACAO_MINI_TAREFA).putExtra(EXTRA_ABRIR, abrir)) }
@@ -389,7 +389,7 @@ class AlarmeService : Service() {
     private var volumeAoFim: Int? = null // o volume de antes do alarme cumprido, devolvido ao fechar
     private val handler = Handler(Looper.getMainLooper())
 
-    // Despertador "conversa + caminhada" ([manhaNova]). O caminho, a etapa e o progresso ficam quando a música
+    // Despertador "conversa + caminhada" ([naConversaECaminhada]). O caminho, a etapa e o progresso ficam quando a música
     // volta, como o anel da câmera; só um alarme novo começa do zero ([esquecerManha])
     private var caminho: CaminhoDaManha? = null // decidido depois do primeiro bom dia
     private var etapa: EtapaDaManha? = null
@@ -507,7 +507,7 @@ class AlarmeService : Service() {
         Log.i(TAG, "Serviço: continuando de onde parou (anel ${p.olhadoMs / 1000} s, etapa ${p.etapa}, ${p.conversadoMs / 1000} s de conversa, ${p.andadoMs / 1000} s andados)")
         _olhado.value = p.olhadoMs
         _metadeVerificada.value = p.metadeVerificada
-        caminho = p.caminho?.let { nome -> CaminhoDaManha.entries.firstOrNull { it.name == nome } }
+        caminho = p.caminho?.let(CaminhoDaManha::deNome)
         etapa = p.etapa?.let { nome -> EtapaDaManha.entries.firstOrNull { it.name == nome } }
         conversadoMs = p.conversadoMs
         extras = p.extras
@@ -653,7 +653,7 @@ class AlarmeService : Service() {
             acao == ACAO_MINI_TAREFA -> if (intent.getBooleanExtra(EXTRA_ABRIR, true)) abrirMiniTarefa() else voltarDaMiniTarefa()
             acao == ACAO_TROCAR_CAMERA -> trocarParaCamera()
             // Os botões de fase e de cancelar só existem na tela de um alarme de teste; um comando atrasado não mexe num alarme de verdade
-            acao == ACAO_FASE -> if (alarme.deTeste) intent.getStringExtra(EXTRA_FASE)?.let { nome -> FaseDoTeste.entries.firstOrNull { it.name == nome } }?.let(::irPraFase)
+            acao == ACAO_FASE -> if (alarme.deTeste) intent.getStringExtra(EXTRA_FASE)?.let { nome -> FaseDaManha.entries.firstOrNull { it.name == nome } }?.let(::irPraFase)
             acao == ACAO_CANCELAR_TESTE -> if (alarme.deTeste && !cumprido) {
                 Log.i(TAG, "Teste: cancelado pelo botão")
                 concluir(comemorar = false)
@@ -815,7 +815,7 @@ class AlarmeService : Service() {
      * "câmera + frases", e a conversa e a caminhada do "conversa + caminhada". A música e o bom dia ainda chamam a tela.
      */
     private fun emSegundoPlano(): Boolean =
-        _silenciado.value && !_saudando.value && !cumprido && (!manhaNova() || _conversa.value != null || _caminhada.value != null)
+        _silenciado.value && !_saudando.value && !cumprido && (!naConversaECaminhada() || _conversa.value != null || _caminhada.value != null)
 
     /**
      * A pessoa disse "stop": a música para e a voz dá bom dia ([textoDaSaudacao]); [PAUSA_DEPOIS_DA_SAUDACAO_MS]
@@ -830,21 +830,21 @@ class AlarmeService : Service() {
         _silenciado.value = true
         _saudando.value = true
         // Missão de 40 min já começada: um "conversa + caminhada" que juntar depois não muda o caminho
-        if (manhaNova()) {
+        if (naConversaECaminhada()) {
             prepararManha()
             ligarSentidos() // o GPS acerta a mira durante a conversa
             // A chuva de agora, 100% assíncrona (thread própria + callback no main): nunca trava o toque. Só o botão de trocar pela câmera depende dela; sem dado, segue a rua.
             Clima.chuva(this) { _chuvaForte.value = it }
         } else if (caminho == null) {
-            caminho = CaminhoDaManha.ANTIGO
+            caminho = CaminhoDaManha.CAMERA
             soltarIa() // uma IA preparada durante a música não vai servir
         }
-        _comCaminhada.value = manhaNova()
+        _comCaminhada.value = naConversaECaminhada()
         // Com a tela do alarme na frente, o serviço ganha os tipos "location" e "microphone": é agora que o Android
         // deixa, e com eles a conversa e a caminhada seguem com a tela fechada
         _tocando.value?.let { mostrarNotificacao(it) }
         // Do bom dia ao fim da conversa, o alto-falante não dorme: a fala depois de um silêncio começaria baixinha
-        if (manhaNova() && etapa != EtapaDaManha.CAMINHADA) sirene.manterAcordado(true)
+        if (naConversaECaminhada() && etapa != EtapaDaManha.CAMINHADA) sirene.manterAcordado(true)
         handler.postDelayed(comecarAtividade, SAUDACAO_MAX_MS)
         val falar: (File?) -> Unit = { arquivo ->
             if (_saudando.value) sirene.falar(arquivo) { handler.postDelayed(anunciarInicio, PAUSA_DEPOIS_DA_SAUDACAO_MS) }
@@ -862,7 +862,7 @@ class AlarmeService : Service() {
     /** "Activity starting now", o bipe positivo e a câmera. No despertador "conversa + caminhada", [saudacaoFeita] no lugar. */
     private val anunciarInicio: Runnable = Runnable {
         if (!_saudando.value) return@Runnable
-        if (manhaNova()) {
+        if (naConversaECaminhada()) {
             saudacaoFeita()
             return@Runnable
         }
@@ -874,7 +874,7 @@ class AlarmeService : Service() {
     /** Fim da saudação: a tela passa pra câmera e a vigia começa a contar. No despertador "conversa + caminhada", [saudacaoFeita] no lugar. */
     private val comecarAtividade: Runnable = Runnable {
         if (!_saudando.value) return@Runnable
-        if (manhaNova()) {
+        if (naConversaECaminhada()) {
             saudacaoFeita() // a voz travou: o prazo vale como o fim do bom dia
             return@Runnable
         }
@@ -899,7 +899,7 @@ class AlarmeService : Service() {
             val agora = SystemClock.elapsedRealtime()
             val passo = agora - ultimoTiqueDaCamera
             ultimoTiqueDaCamera = agora
-            if (!_silenciado.value || _saudando.value || _verificacao.value != null || manhaNova() || cumprido) return
+            if (!_silenciado.value || _saudando.value || _verificacao.value != null || naConversaECaminhada() || cumprido) return
             val l = _leituraDaCamera.value
             val velha = agora - l.quando > QUADRO_VELHO_MS
             val leitura = if (velha) Leitura.SEM_ROSTO else l.leitura
@@ -977,7 +977,7 @@ class AlarmeService : Service() {
         c.ligar()
     }
 
-    private val relerCamera = Runnable { if (_silenciado.value && !manhaNova()) ligarCamera() }
+    private val relerCamera = Runnable { if (_silenciado.value && !naConversaECaminhada()) ligarCamera() }
 
     /** Fecha a câmera do serviço e para o relógio dela (a música voltou, ou o alarme acabou). */
     private fun desligarCamera() {
@@ -1158,7 +1158,7 @@ class AlarmeService : Service() {
     private fun comConversaECaminhada(alarme: Alarme) = alarme.missao && alarme.caminhada
 
     /** O alarme tocando é o despertador "conversa + caminhada", e esta manhã não virou a missão de 40 min. */
-    private fun manhaNova(): Boolean = _tocando.value?.let { comConversaECaminhada(it) } == true && caminho != CaminhoDaManha.ANTIGO
+    private fun naConversaECaminhada(): Boolean = _tocando.value?.let { comConversaECaminhada(it) } == true && caminho != CaminhoDaManha.CAMERA
 
     /**
      * No STOP, enquanto a voz dá bom dia: na primeira vez, pede a abertura da IA (o motor já pronto desde a música,
@@ -1254,12 +1254,12 @@ class AlarmeService : Service() {
         handler.removeCallbacks(esperaDaDecisao)
         val primeira = abertura
         val escolhido = when {
-            !comConversaECaminhada(alarme) -> CaminhoDaManha.ANTIGO
+            !comConversaECaminhada(alarme) -> CaminhoDaManha.CAMERA
             primeira != null -> CaminhoDaManha.CONVERSA_E_CAMINHADA
             else -> CaminhoDaManha.SO_CAMINHADA
         }
         caminho = escolhido
-        _comCaminhada.value = manhaNova()
+        _comCaminhada.value = naConversaECaminhada()
         Log.i(TAG, "Conversa: caminho da manhã $escolhido")
         if (escolhido == CaminhoDaManha.CONVERSA_E_CAMINHADA && primeira != null) {
             etapa = EtapaDaManha.CONVERSA
@@ -1920,7 +1920,7 @@ class AlarmeService : Service() {
      * pede; o resto (tempo andado, anel) fica. Voltar pra conversa zera o tempo de conversa (senão a IA só perguntaria
      * se ele quer continuar) e, se o modelo já saiu da memória, carrega de novo ([voltarPraConversa]).
      */
-    private fun irPraFase(fase: FaseDoTeste) {
+    private fun irPraFase(fase: FaseDaManha) {
         val alarme = _tocando.value ?: return
         if (!_silenciado.value || _saudando.value || cumprido) return
         val agora = SystemClock.elapsedRealtime()
@@ -1928,27 +1928,27 @@ class AlarmeService : Service() {
         if (atual == null || atual == fase || fase !in atual.fases(comFrases = frasesDeHoje.isNotEmpty())) return
         Log.i(TAG, "Teste: de $atual pra $fase pelos botões")
         when (fase) {
-            FaseDoTeste.CONVERSA -> voltarPraConversa()
-            FaseDoTeste.PREPARO -> {
+            FaseDaManha.CONVERSA -> voltarPraConversa()
+            FaseDaManha.PREPARO -> {
                 prazoAte = 0L // o prazo começa de novo, inteiro
-                if (atual == FaseDoTeste.CONVERSA) saltarConversa() else comecarCaminhada()
+                if (atual == FaseDaManha.CONVERSA) saltarConversa() else comecarCaminhada()
             }
-            FaseDoTeste.CAMINHADA -> {
+            FaseDaManha.CAMINHADA -> {
                 prazoAte = agora // prazo já vencido: sem ondas, e os bipes de parado contam daqui
-                if (atual == FaseDoTeste.CONVERSA) saltarConversa() else comecarCaminhada()
+                if (atual == FaseDaManha.CONVERSA) saltarConversa() else comecarCaminhada()
             }
-            FaseDoTeste.CAMERA_FACIL -> {
+            FaseDaManha.CAMERA_FACIL -> {
                 cancelarVerificacao()
                 zerarAnel()
                 adiarVigia()
             }
-            FaseDoTeste.FRASES -> {
+            FaseDaManha.FRASES -> {
                 cancelarVerificacao()
                 _olhado.value = verificacaoEm(alarme, tempos())
                 _metadeVerificada.value = false
                 iniciarVerificacao()
             }
-            FaseDoTeste.CAMERA_EXIGENTE -> {
+            FaseDaManha.CAMERA_EXIGENTE -> {
                 cancelarVerificacao()
                 _olhado.value = maxOf(_olhado.value, verificacaoEm(alarme, tempos()))
                 _metadeVerificada.value = true
@@ -2016,8 +2016,8 @@ class AlarmeService : Service() {
 
     /**
      * O botão "switch to camera" da chuva forte: derruba a caminhada na rua inteira e entra na missão da câmera, que
-     * também dispensa o alarme ([EtapaOlhar]: meta ou defeito). A câmera só anda com [manhaNova] falsa, e forçar
-     * [CaminhoDaManha.ANTIGO] é o que a torna falsa (1139) e herda a dispensa provada do "câmera + frases". Só de ida
+     * também dispensa o alarme ([EtapaOlhar]: meta ou defeito). A câmera só anda com [naConversaECaminhada] falsa, e forçar
+     * [CaminhoDaManha.CAMERA] é o que a torna falsa (1139) e herda a dispensa provada do "câmera + frases". Só de ida
      * (não há voltar pra caminhada), e só com a câmera já liberada: sem permissão, a troca poderia prender, então nem
      * oferece. Fora da caminhada (já trocou, ou nem está nela): nada. Idempotente contra comando repetido.
      */
@@ -2028,7 +2028,7 @@ class AlarmeService : Service() {
         // Derruba a caminhada por inteiro: sem isso o ContadorDaCaminhada concluiria por baixo da câmera, e os bipes e as ondas de parado seguiriam
         pararCaminhada(desligarGps = true)
         _comCaminhada.value = false
-        caminho = CaminhoDaManha.ANTIGO // destrava a câmera (manhaNova fica falsa) e herda a dispensa do "câmera + frases"
+        caminho = CaminhoDaManha.CAMERA // destrava a câmera (naConversaECaminhada fica falsa) e herda a dispensa do "câmera + frases"
         zerarAnel()
         adiarVigia()
         comecarCamera()
@@ -2134,7 +2134,7 @@ class AlarmeService : Service() {
      * menos). Se ele é o "câmera + frases", a manhã nova para e a música volta: depois do STOP, a missão de 40 min.
      */
     private fun ajustarManha(alarme: Alarme) {
-        if (caminho == null || caminho == CaminhoDaManha.ANTIGO) return
+        if (caminho == null || caminho == CaminhoDaManha.CAMERA) return
         if (!comConversaECaminhada(alarme)) {
             Log.i(TAG, "Serviço: o alarme novo é o câmera + frases, a música volta e depois vem a missão de 40 min")
             religarMusica()
@@ -2247,8 +2247,8 @@ class AlarmeService : Service() {
     private fun tipoDoServico(comum: Int): Int {
         if (Build.VERSION.SDK_INT < 29 || !_silenciado.value) return comum
         var tipo = comum
-        if (manhaNova() && Poder.LOCALIZACAO.liberado(this)) tipo = tipo or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-        if (!manhaNova() && Build.VERSION.SDK_INT >= 30 && Poder.CAMERA.liberado(this)) tipo = tipo or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+        if (naConversaECaminhada() && Poder.LOCALIZACAO.liberado(this)) tipo = tipo or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+        if (!naConversaECaminhada() && Build.VERSION.SDK_INT >= 30 && Poder.CAMERA.liberado(this)) tipo = tipo or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
         if (Build.VERSION.SDK_INT >= 30 && Poder.MICROFONE.liberado(this)) tipo = tipo or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
         return tipo
     }

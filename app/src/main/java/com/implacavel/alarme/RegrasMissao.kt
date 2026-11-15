@@ -92,51 +92,51 @@ fun marcoCompletado(antesMs: Long, depoisMs: Long, metaMs: Long, verificacaoMs: 
  * As fases que os botões "Back", "Cancel test" e "Next" da tela do alarme percorrem, só nos alarmes dos botões
  * de teste: no "câmera + frases", câmera fácil, frases (se os ajustes pedem alguma) e câmera exigente; no "conversa +
  * caminhada", conversa, prazo pra sair e caminhada. O serviço muda de fase ([AlarmeService.irPraFase]); a tela só diz
- * em qual está ([faseDoTeste]).
+ * em qual está ([faseDaManha]).
  */
-enum class FaseDoTeste(val rotulo: String) {
+enum class FaseDaManha(val rotulo: String) {
     CAMERA_FACIL("Camera"), FRASES("Phrases"), CAMERA_EXIGENTE("Camera 2"),
     CONVERSA("Talk"), PREPARO("Wait"), CAMINHADA("Walk");
 
     /** As fases do teste a que esta pertence, na ordem; sem frases nos ajustes ([comFrases] false), a câmera vai direto da fácil pra exigente. */
-    fun fases(comFrases: Boolean = true): List<FaseDoTeste> = when {
+    fun fases(comFrases: Boolean = true): List<FaseDaManha> = when {
         this !in FASES_DA_CAMERA -> FASES_DA_CAMINHADA
         comFrases -> FASES_DA_CAMERA
         else -> FASES_DA_CAMERA - FRASES
     }
 
-    fun anterior(comFrases: Boolean = true): FaseDoTeste? = fases(comFrases).let { it.getOrNull(it.indexOf(this) - 1) }
-    fun proxima(comFrases: Boolean = true): FaseDoTeste? = fases(comFrases).let { it.getOrNull(it.indexOf(this) + 1) }
+    fun anterior(comFrases: Boolean = true): FaseDaManha? = fases(comFrases).let { it.getOrNull(it.indexOf(this) - 1) }
+    fun proxima(comFrases: Boolean = true): FaseDaManha? = fases(comFrases).let { it.getOrNull(it.indexOf(this) + 1) }
 }
 
-val FASES_DA_CAMERA = listOf(FaseDoTeste.CAMERA_FACIL, FaseDoTeste.FRASES, FaseDoTeste.CAMERA_EXIGENTE)
-val FASES_DA_CAMINHADA = listOf(FaseDoTeste.CONVERSA, FaseDoTeste.PREPARO, FaseDoTeste.CAMINHADA)
+val FASES_DA_CAMERA = listOf(FaseDaManha.CAMERA_FACIL, FaseDaManha.FRASES, FaseDaManha.CAMERA_EXIGENTE)
+val FASES_DA_CAMINHADA = listOf(FaseDaManha.CONVERSA, FaseDaManha.PREPARO, FaseDaManha.CAMINHADA)
 
 /**
  * Em que fase do teste a tela do alarme está, pelo que o serviço mostra: [conversa] e [caminhada] são as etapas da
  * manhã ([noPrazo] = ainda no prazo pra sair); [verificacao] e [metadeVerificada], as da câmera. Null fora das fases
  * (a música, o bom dia, a comemoração).
  */
-fun faseDoTeste(conversa: Boolean, caminhada: Boolean, noPrazo: Boolean, verificacao: Boolean, metadeVerificada: Boolean, naCamera: Boolean): FaseDoTeste? = when {
-    conversa -> FaseDoTeste.CONVERSA
-    caminhada && noPrazo -> FaseDoTeste.PREPARO
-    caminhada -> FaseDoTeste.CAMINHADA
-    verificacao -> FaseDoTeste.FRASES
-    naCamera && metadeVerificada -> FaseDoTeste.CAMERA_EXIGENTE
-    naCamera -> FaseDoTeste.CAMERA_FACIL
+fun faseDaManha(conversa: Boolean, caminhada: Boolean, noPrazo: Boolean, verificacao: Boolean, metadeVerificada: Boolean, naCamera: Boolean): FaseDaManha? = when {
+    conversa -> FaseDaManha.CONVERSA
+    caminhada && noPrazo -> FaseDaManha.PREPARO
+    caminhada -> FaseDaManha.CAMINHADA
+    verificacao -> FaseDaManha.FRASES
+    naCamera && metadeVerificada -> FaseDaManha.CAMERA_EXIGENTE
+    naCamera -> FaseDaManha.CAMERA_FACIL
     else -> null
 }
 
 /**
- * O modo da manhã que o Mistral lê ([FonteDoModo]), pela [fase] que a tela do alarme mostra ([faseDoTeste]).
+ * O modo da manhã que o Mistral lê ([FonteDoModo]), pela [fase] que a tela do alarme mostra ([faseDaManha]).
  * (o dono, 11-08): na caminhada (e no prazo pra sair), Instagram livre; na câmera (a etapa com o YouTube), YouTube livre;
  * qualquer outra etapa da atividade (a música, o bom dia, a conversa, as frases, a comemoração) é CONVERSA: tudo
  * trancado. Fora da atividade ([emAtividade]: um alarme com missão tocando), "nenhuma".
  */
-fun modoDaManha(emAtividade: Boolean, fase: FaseDoTeste?): String = when {
+fun modoDaManha(emAtividade: Boolean, fase: FaseDaManha?): String = when {
     !emAtividade -> "nenhuma"
-    fase == FaseDoTeste.PREPARO || fase == FaseDoTeste.CAMINHADA -> "CAMINHADA"
-    fase == FaseDoTeste.CAMERA_FACIL || fase == FaseDoTeste.CAMERA_EXIGENTE -> "CAMERA"
+    fase == FaseDaManha.PREPARO || fase == FaseDaManha.CAMINHADA -> "CAMINHADA"
+    fase == FaseDaManha.CAMERA_FACIL || fase == FaseDaManha.CAMERA_EXIGENTE -> "CAMERA"
     else -> "CONVERSA"
 }
 

@@ -79,7 +79,7 @@ class Sirene(private val ctx: Context) {
 
     /** Os sons de aviso saem sempre no volume do fim da subida (40%), mesmo com ela no começo; a voz, no da tela principal ([Ajustes.volumeDaVoz], 30% de começo). */
     private fun volumeDosAvisos() = foto?.volumeDosAvisos(audio.getStreamMaxVolume(AudioManager.STREAM_ALARM)) ?: 0
-    private fun volumeDaVoz() = foto?.volumeDaVoz(audio.getStreamMaxVolume(AudioManager.STREAM_ALARM), Ajustes.volumeDaVoz) ?: 0
+    private fun volumeDaVoz() = foto?.volumeDaVoz(audio.getStreamMaxVolume(AudioManager.STREAM_ALARM), Ajustes.volumeDaVoz.value) ?: 0
 
     /**
      * Quanto a fala toca dentro do degrau dela ([EmAndamento.volumeDaVoz]). Os degraus do volume de alarme são em dB:
@@ -89,7 +89,7 @@ class Sirene(private val ctx: Context) {
     private fun ganhoDaVoz(): Float {
         val em = foto ?: return 1f
         val maximo = audio.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-        val fracao = Ajustes.volumeDaVoz
+        val fracao = Ajustes.volumeDaVoz.value
         val degrau = em.volumeDaVoz(maximo, fracao)
         if (Build.VERSION.SDK_INT < 28 || degrau <= 1) return em.ganhoDaVoz(maximo, fracao)
         return runCatching {

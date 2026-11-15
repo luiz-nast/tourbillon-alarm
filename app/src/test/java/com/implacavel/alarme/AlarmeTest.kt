@@ -279,4 +279,13 @@ class AlarmeTest {
         val simples = Progresso(desde = 2_000, olhadoMs = 30_000)
         assertEquals(simples, Progresso.deJson(JSONObject(simples.paraJson().toString())))
     }
+
+    @Test
+    fun progressoGravadoComOCaminhoAntigoVoltaComoCamera() {
+        // A câmera se chamava ANTIGO: um alarme em andamento gravado antes da troca do nome não perde o caminho
+        val gravado = Progresso.deJson(JSONObject(Progresso(desde = 1_000, caminho = "ANTIGO").paraJson().toString()))
+        assertEquals(CaminhoDaManha.CAMERA, gravado.caminho?.let(CaminhoDaManha::deNome))
+        assertEquals(CaminhoDaManha.SO_CAMINHADA, CaminhoDaManha.deNome("SO_CAMINHADA"))
+        assertNull(CaminhoDaManha.deNome("lixo"))
+    }
 }

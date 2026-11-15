@@ -323,13 +323,13 @@ private fun PaginaAlarme(
 }
 
 /**
- * Os botões de um alarme de teste, no pé da tela: "Back" e "Next" andam pelas fases do teste ([FaseDoTeste]:
+ * Os botões de um alarme de teste, no pé da tela: "Back" e "Next" andam pelas fases do teste ([FaseDaManha]:
  * conversa, prazo e caminhada; ou câmera, frases (se há alguma, [comFrases]) e câmera exigente), e "Cancel" acaba o
  * teste, com uma confirmação (o segundo toque em 4 s). Em cima, as fases, com a atual marcada. Textos curtos e pouca
  * margem interna: três botões numa tela de 384 dp.
  */
 @Composable
-private fun BotoesDoTeste(fase: FaseDoTeste, comFrases: Boolean, cor: Color, onIr: (FaseDoTeste) -> Unit, onCancelar: () -> Unit) {
+private fun BotoesDoTeste(fase: FaseDaManha, comFrases: Boolean, cor: Color, onIr: (FaseDaManha) -> Unit, onCancelar: () -> Unit) {
     var confirmando by remember { mutableStateOf(false) }
     LaunchedEffect(confirmando) {
         if (confirmando) {

@@ -217,17 +217,22 @@ fun pedidoDepoisDeInterrompida(antes: String, fala: String): String {
 
 /**
  * O caminho da manhã, decidido logo depois do bom dia. Internet ou GPS não mudam o caminho escolhido; na chuva
- * forte, a tela da caminhada oferece trocar a rua pela câmera (vira [ANTIGO] no meio, ver trocarParaCamera).
+ * forte, a tela da caminhada oferece trocar a rua pela câmera (vira [CAMERA] no meio, ver trocarParaCamera).
  */
 enum class CaminhoDaManha {
-    /** O alarme tocando é o "câmera + frases" (outro alarme tomou o lugar do teste): a missão dele, de 40 min. */
-    ANTIGO,
+    /** A missão da câmera, de 40 min: o alarme tocando é o "câmera + frases" (outro alarme tomou o lugar do teste), ou a chuva forte trocou a caminhada por ela. */
+    CAMERA,
 
     /** A conversa com a IA, depois o prazo pra sair e a caminhada. */
     CONVERSA_E_CAMINHADA,
 
     /** Sem a IA (sem o modelo, sem memória, o app caiu, ela não abriu a tempo): direto pro prazo pra sair e a caminhada. */
-    SO_CAMINHADA,
+    SO_CAMINHADA;
+
+    companion object {
+        /** O caminho gravado com este [nome] no [Progresso] (null se não é de nenhum). "ANTIGO" é o nome que a [CAMERA] tinha: uma gravação de antes da troca continua valendo. */
+        fun deNome(nome: String): CaminhoDaManha? = entries.firstOrNull { it.name == nome.replace("ANTIGO", "CAMERA") }
+    }
 }
 
 /** Quanto tempo de conversa o [alarme] pede: o dos [tempos] (de começo, 10 min); no teste, [CONVERSA_TESTE_MS]. */

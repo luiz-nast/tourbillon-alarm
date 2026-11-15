@@ -179,16 +179,16 @@ class MissaoTest {
     @Test
     fun modoDaManhaProMistral() {
         // Na caminhada (e no prazo pra sair), Instagram livre; na câmera, YouTube livre; o resto da atividade, trancado
-        assertEquals("CAMINHADA", modoDaManha(emAtividade = true, fase = FaseDoTeste.PREPARO))
-        assertEquals("CAMINHADA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CAMINHADA))
-        assertEquals("CAMERA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CAMERA_FACIL))
-        assertEquals("CAMERA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CAMERA_EXIGENTE))
-        assertEquals("CONVERSA", modoDaManha(emAtividade = true, fase = FaseDoTeste.CONVERSA))
-        assertEquals("CONVERSA", modoDaManha(emAtividade = true, fase = FaseDoTeste.FRASES))
+        assertEquals("CAMINHADA", modoDaManha(emAtividade = true, fase = FaseDaManha.PREPARO))
+        assertEquals("CAMINHADA", modoDaManha(emAtividade = true, fase = FaseDaManha.CAMINHADA))
+        assertEquals("CAMERA", modoDaManha(emAtividade = true, fase = FaseDaManha.CAMERA_FACIL))
+        assertEquals("CAMERA", modoDaManha(emAtividade = true, fase = FaseDaManha.CAMERA_EXIGENTE))
+        assertEquals("CONVERSA", modoDaManha(emAtividade = true, fase = FaseDaManha.CONVERSA))
+        assertEquals("CONVERSA", modoDaManha(emAtividade = true, fase = FaseDaManha.FRASES))
         assertEquals("CONVERSA", modoDaManha(emAtividade = true, fase = null)) // a música, o bom dia, a comemoração
         // Fora da atividade: nenhuma, seja qual for a fase
         assertEquals("nenhuma", modoDaManha(emAtividade = false, fase = null))
-        assertEquals("nenhuma", modoDaManha(emAtividade = false, fase = FaseDoTeste.CAMINHADA))
+        assertEquals("nenhuma", modoDaManha(emAtividade = false, fase = FaseDaManha.CAMINHADA))
     }
 
     @Test
@@ -202,28 +202,28 @@ class MissaoTest {
     @Test
     fun fasesDosBotoesDoTeste() {
         // Conversa + caminhada: conversa › prazo › caminhada
-        assertEquals(FaseDoTeste.CONVERSA, faseDoTeste(conversa = true, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = false))
-        assertEquals(FaseDoTeste.PREPARO, faseDoTeste(conversa = false, caminhada = true, noPrazo = true, verificacao = false, metadeVerificada = false, naCamera = false))
-        assertEquals(FaseDoTeste.CAMINHADA, faseDoTeste(conversa = false, caminhada = true, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = false))
+        assertEquals(FaseDaManha.CONVERSA, faseDaManha(conversa = true, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = false))
+        assertEquals(FaseDaManha.PREPARO, faseDaManha(conversa = false, caminhada = true, noPrazo = true, verificacao = false, metadeVerificada = false, naCamera = false))
+        assertEquals(FaseDaManha.CAMINHADA, faseDaManha(conversa = false, caminhada = true, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = false))
         // Câmera + frases: câmera fácil › frases › câmera exigente
-        assertEquals(FaseDoTeste.CAMERA_FACIL, faseDoTeste(conversa = false, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = true))
-        assertEquals(FaseDoTeste.FRASES, faseDoTeste(conversa = false, caminhada = false, noPrazo = false, verificacao = true, metadeVerificada = false, naCamera = true))
-        assertEquals(FaseDoTeste.CAMERA_EXIGENTE, faseDoTeste(conversa = false, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = true, naCamera = true))
+        assertEquals(FaseDaManha.CAMERA_FACIL, faseDaManha(conversa = false, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = true))
+        assertEquals(FaseDaManha.FRASES, faseDaManha(conversa = false, caminhada = false, noPrazo = false, verificacao = true, metadeVerificada = false, naCamera = true))
+        assertEquals(FaseDaManha.CAMERA_EXIGENTE, faseDaManha(conversa = false, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = true, naCamera = true))
         // Entre uma etapa e outra (a música, o bom dia, a espera da IA): nenhuma
-        assertNull(faseDoTeste(conversa = false, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = false))
+        assertNull(faseDaManha(conversa = false, caminhada = false, noPrazo = false, verificacao = false, metadeVerificada = false, naCamera = false))
         // Voltar e avançar, nas pontas não
-        assertNull(FaseDoTeste.CONVERSA.anterior())
-        assertEquals(FaseDoTeste.PREPARO, FaseDoTeste.CONVERSA.proxima())
-        assertEquals(FaseDoTeste.PREPARO, FaseDoTeste.CAMINHADA.anterior())
-        assertNull(FaseDoTeste.CAMINHADA.proxima())
-        assertEquals(FaseDoTeste.FRASES, FaseDoTeste.CAMERA_EXIGENTE.anterior())
-        assertNull(FaseDoTeste.CAMERA_EXIGENTE.proxima())
-        assertEquals(FASES_DA_CAMERA, FaseDoTeste.FRASES.fases())
-        assertEquals(FASES_DA_CAMINHADA, FaseDoTeste.PREPARO.fases())
+        assertNull(FaseDaManha.CONVERSA.anterior())
+        assertEquals(FaseDaManha.PREPARO, FaseDaManha.CONVERSA.proxima())
+        assertEquals(FaseDaManha.PREPARO, FaseDaManha.CAMINHADA.anterior())
+        assertNull(FaseDaManha.CAMINHADA.proxima())
+        assertEquals(FaseDaManha.FRASES, FaseDaManha.CAMERA_EXIGENTE.anterior())
+        assertNull(FaseDaManha.CAMERA_EXIGENTE.proxima())
+        assertEquals(FASES_DA_CAMERA, FaseDaManha.FRASES.fases())
+        assertEquals(FASES_DA_CAMINHADA, FaseDaManha.PREPARO.fases())
         // Sem frases nos ajustes, a câmera vai da fácil direto pra exigente
-        assertEquals(listOf(FaseDoTeste.CAMERA_FACIL, FaseDoTeste.CAMERA_EXIGENTE), FaseDoTeste.CAMERA_FACIL.fases(comFrases = false))
-        assertEquals(FaseDoTeste.CAMERA_EXIGENTE, FaseDoTeste.CAMERA_FACIL.proxima(comFrases = false))
-        assertEquals(FaseDoTeste.CAMERA_FACIL, FaseDoTeste.CAMERA_EXIGENTE.anterior(comFrases = false))
-        assertEquals(FASES_DA_CAMINHADA, FaseDoTeste.CONVERSA.fases(comFrases = false))
+        assertEquals(listOf(FaseDaManha.CAMERA_FACIL, FaseDaManha.CAMERA_EXIGENTE), FaseDaManha.CAMERA_FACIL.fases(comFrases = false))
+        assertEquals(FaseDaManha.CAMERA_EXIGENTE, FaseDaManha.CAMERA_FACIL.proxima(comFrases = false))
+        assertEquals(FaseDaManha.CAMERA_FACIL, FaseDaManha.CAMERA_EXIGENTE.anterior(comFrases = false))
+        assertEquals(FASES_DA_CAMINHADA, FaseDaManha.CONVERSA.fases(comFrases = false))
     }
 }

@@ -63,8 +63,7 @@ object Ajustes {
     private val _volumeDaVoz = MutableStateFlow(VOLUME_DA_VOZ)
 
     /** Volume da voz do app, de 0,1 a 1 do volume de alarme, escolhido na tela principal (Settings). De começo, [VOLUME_DA_VOZ]. */
-    val volumeDaVozAgora: StateFlow<Float> = _volumeDaVoz.asStateFlow()
-    val volumeDaVoz: Float get() = _volumeDaVoz.value
+    val volumeDaVoz: StateFlow<Float> = _volumeDaVoz.asStateFlow()
 
     fun escolherVolumeDaVoz(fracao: Float) {
         val valor = fracao.coerceIn(VOLUME_DA_VOZ_MIN, 1f)

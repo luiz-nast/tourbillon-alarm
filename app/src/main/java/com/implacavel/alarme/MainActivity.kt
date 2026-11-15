@@ -73,7 +73,7 @@ private fun TelaPrincipal() {
     val tocando by AlarmeService.tocando.collectAsStateWithLifecycle()
     val sons by Sons.lista.collectAsStateWithLifecycle()
     val somPadrao by Sons.padrao.collectAsStateWithLifecycle()
-    val volumeDaVoz by Ajustes.volumeDaVozAgora.collectAsStateWithLifecycle()
+    val volumeDaVoz by Ajustes.volumeDaVoz.collectAsStateWithLifecycle()
     val tempos by Ajustes.tempos.collectAsStateWithLifecycle()
     val sobreMim by Ajustes.sobreMim.collectAsStateWithLifecycle()
     val palavras by Ajustes.palavras.collectAsStateWithLifecycle()
