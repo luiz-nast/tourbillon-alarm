@@ -149,17 +149,7 @@ object Ajustes {
     fun carregar(ctx: Context) {
         prefs = ctx.prefsProtegidas("ajustes")
         _volumeDaVoz.value = prefs.getFloat("volumeDaVoz", VOLUME_DA_VOZ).coerceIn(VOLUME_DA_VOZ_MIN, 1f)
-        val p = TEMPOS_PADRAO
-        _tempos.value = Tempos(
-            volumeInicio = prefs.getFloat("volumeInicio", p.volumeInicio),
-            volumeFim = prefs.getFloat("volumeFim", p.volumeFim),
-            cameraFacilMin = prefs.getInt("cameraFacilMin", p.cameraFacilMin),
-            frases = prefs.getInt("frases", p.frases),
-            cameraDificilMin = prefs.getInt("cameraDificilMin", p.cameraDificilMin),
-            conversaMin = prefs.getInt("conversaMin", p.conversaMin),
-            prepararMin = prefs.getInt("prepararMin", p.prepararMin),
-            caminhadaMin = prefs.getInt("caminhadaMin", p.caminhadaMin),
-        ).ajustado()
+        _tempos.value = Tempos.deJson(JSONObject(prefs.all)) // as chaves das prefs são as do JSON dos Tempos
         _sobreMim.value = prefs.getString("sobreMim", "").orEmpty().take(SOBRE_MIM_MAX_LETRAS)
         _palavras.value = prefs.getString("palavras", "").orEmpty().take(PALAVRAS_MAX_LETRAS)
         _memoriaDaIa.value = limparAnotacoes(prefs.getString("memoriaDaIa", "").orEmpty())

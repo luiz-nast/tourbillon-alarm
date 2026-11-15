@@ -41,6 +41,13 @@ class TemposTest {
     }
 
     @Test
+    fun deJsonLeAsPrefsComoElasVem() {
+        // SharedPreferences.getAll() devolve Float e Int, e mais as chaves que não são dos Tempos
+        val prefs = mapOf("volumeInicio" to 0.15f, "volumeFim" to 0.65f, "caminhadaMin" to 30, "frases" to 99, "sobreMim" to "oi")
+        assertEquals(TEMPOS_PADRAO.copy(volumeInicio = 0.15f, volumeFim = 0.65f, frases = 10, caminhadaMin = 30), Tempos.deJson(org.json.JSONObject(prefs)))
+    }
+
+    @Test
     fun aFalaDeSairDizOPrazoDosAjustes() {
         assertEquals("Time to move, sir. Get dressed and go outside: you have 4 minutes to start walking.", falaDeSair(minutos(4)))
         assertEquals("Time to move, sir. Get dressed and go outside: you have one minute to start walking.", falaDeSair(minutos(1)))
