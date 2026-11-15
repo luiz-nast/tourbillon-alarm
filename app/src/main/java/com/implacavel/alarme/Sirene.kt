@@ -61,6 +61,8 @@ class Sirene(private val ctx: Context) {
      */
     private val travarVolume = object : Runnable {
         override fun run() {
+            // Ninguém pausa a música: parada é morta (o MediaPlayer caiu, ex.: o audioserver reiniciou). isPlaying não vale no estado de erro
+            if (player?.let { !runCatching { it.isPlaying }.getOrDefault(false) } == true) recomecarMusica()
             when {
                 volumeAntesDoBipe != null -> {}
                 falante != null || faixa != null -> subirAte(volumeDoFalante)
@@ -114,13 +116,7 @@ class Sirene(private val ctx: Context) {
         foto = em
         if (comeco) runCatching { audio.setStreamVolume(AudioManager.STREAM_ALARM, piso(), 0) }
         // Outro alarme juntou no meio e trocou o som (música ↔ toque de remédio): troca já, se está tocando
-        if (trocouSom) player?.let {
-            runCatching { it.stop() }
-            it.release()
-            player = null
-            tocarSom()
-            player?.setVolume(fator, fator)
-        }
+        if (trocouSom && player != null) recomecarMusica()
         handler.removeCallbacks(travarVolume)
         handler.post(travarVolume)
     }
@@ -139,6 +135,17 @@ class Sirene(private val ctx: Context) {
         audio.requestAudioFocus(pedido)
         tocarSom()
         vibrar()
+    }
+
+    /** Para a música e toca de novo, do começo, no volume dela (outro som no meio do toque, ou o MediaPlayer que morreu). */
+    private fun recomecarMusica() {
+        player?.let {
+            runCatching { it.stop() }
+            it.release()
+        }
+        player = null
+        tocarSom()
+        player?.setVolume(fator, fator)
     }
 
     /** Cala som e vibração (um bipe no meio devolve o volume). O volume continua travado, e as outras mídias, pausadas. */
@@ -369,7 +376,9 @@ class Sirene(private val ctx: Context) {
             somDoApp(R.raw.alarme_reserva),
         )
         for (uri in candidatos) {
-            player = tocarArquivo(uri, emLoop = true)
+            player = tocarArquivo(uri, emLoop = true)?.apply {
+                setOnErrorListener { p, _, _ -> if (player === p) recomecarMusica(); true } // depois do "stop" o [player] é null: um erro tardio não religa a música
+            }
             if (player != null) {
                 Log.i(TAG, "Sirene: tocando $uri")
                 return
