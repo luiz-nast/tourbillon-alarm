@@ -53,14 +53,13 @@ object Sons {
         migrarMusicaAntiga(ctx)
     }
 
-    /** Relê a pasta (um som pode ter chegado pelo cabo); um padrão que sumiu deixa de ser padrão. */
+    /** Relê a pasta (um som pode ter chegado pelo cabo). O padrão não muda: um arquivo que some por um instante (cópia pelo cabo) não o apaga. */
     @Synchronized
     fun reler() {
         _lista.value = (pasta.listFiles() ?: emptyArray())
             .filter { it.isFile && it.length() > 0 }
             .sortedBy { it.name.lowercase() }
             .map { Som(it.name, it) }
-        if (_padrao.value != null && existente(_padrao.value!!) == null) escolherPadrao(null)
     }
 
     /**
@@ -112,10 +111,11 @@ object Sons {
     /** O som [nome], se está na biblioteca (só nomes da lista: nada de caminho vindo de fora). */
     fun achar(nome: String): Som? = existente(nome)
 
-    /** Apaga o som [nome] da biblioteca: os alarmes que o usavam passam a tocar o padrão. */
+    /** Apaga o som [nome] da biblioteca: os alarmes que o usavam passam a tocar o padrão (e, se era ele o padrão, o toque do celular). */
     @Synchronized
     fun remover(nome: String) {
         File(pasta, nome).delete()
+        if (nome == _padrao.value) escolherPadrao(null)
         Log.i(TAG, "Sons: removido da biblioteca: $nome")
         reler()
     }
