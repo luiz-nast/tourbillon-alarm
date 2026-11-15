@@ -49,6 +49,8 @@ class Sirene(private val ctx: Context) {
     private var acordadoPraFala = false // o [acordador] é só dessa fala: acaba com ela
     private var foto: EmAndamento? = null
     private var fator = 1f // volume da música relativo ao de alarme ([volume])
+    private var tocando = false // entre [tocar] e [calar]: a música tem que estar tocando
+    private var quedas = 0 // quantas vezes a música caiu neste toque: um som que cai de novo e de novo passa a vez ao próximo ([tocarSom])
     private var volumeAntesDoBipe: Int? = null // só enquanto um bipe toca no degrau dele
 
     /** O volume de alarme de agora, pela subida do alarme (30 s no normal, 2 min no remédio; veja [EmAndamento.volumeAgora]). */
@@ -61,7 +63,11 @@ class Sirene(private val ctx: Context) {
     private val travarVolume = object : Runnable {
         override fun run() {
             // Ninguém pausa a música: parada é morta (o MediaPlayer caiu, ex.: o audioserver reiniciou). isPlaying não vale no estado de erro
-            if (player?.let { !runCatching { it.isPlaying }.getOrDefault(false) } == true) recomecarMusica()
+            if (tocando) {
+                val musica = player
+                if (musica == null) recomecarMusica() // o recomeço não pegou (o audioserver ainda voltando): tenta de novo
+                else if (!runCatching { musica.isPlaying }.getOrDefault(false)) musicaCaiu()
+            }
             when {
                 volumeAntesDoBipe != null -> {}
                 falante != null || faixa != null -> subirAte(volumeDoFalante)
@@ -122,6 +128,8 @@ class Sirene(private val ctx: Context) {
     /** Som e vibração (do começo, se já estavam tocando). */
     fun tocar() {
         calar()
+        tocando = true
+        quedas = 0
         fator = 1f // a música nova começa no volume cheio
         subirAoPiso() // calado, o volume era da pessoa (ex.: abaixou pro YouTube)
         // Foco de áudio pausa a música ou o vídeo de outros apps até o alarme acabar ([desligar]).
@@ -133,6 +141,12 @@ class Sirene(private val ctx: Context) {
         audio.requestAudioFocus(pedido)
         tocarSom()
         vibrar()
+    }
+
+    /** A música caiu (o MediaPlayer deu erro ou parou): toca de novo, do começo. */
+    private fun musicaCaiu() {
+        quedas++
+        recomecarMusica()
     }
 
     /** Para a música e toca de novo, do começo, no volume dela (outro som no meio do toque, ou o MediaPlayer que morreu). */
@@ -148,6 +162,7 @@ class Sirene(private val ctx: Context) {
 
     /** Cala som e vibração (um bipe no meio devolve o volume). O volume continua travado, e as outras mídias, pausadas. */
     fun calar() {
+        tocando = false
         falaAcordando?.let(handler::removeCallbacks)
         falaAcordando = null
         if (acordadoPraFala) manterAcordado(false)
@@ -372,9 +387,10 @@ class Sirene(private val ctx: Context) {
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
             somDoApp(R.raw.alarme_reserva),
         )
-        for (uri in candidatos) {
+        val vez = (quedas / QUEDAS_POR_SOM) % candidatos.size
+        for (uri in candidatos.drop(vez) + candidatos.take(vez)) {
             player = tocarArquivo(uri, emLoop = true)?.apply {
-                setOnErrorListener { p, _, _ -> if (player === p) recomecarMusica(); true } // depois do "stop" o [player] é null: um erro tardio não religa a música
+                setOnErrorListener { p, _, _ -> if (player === p) musicaCaiu(); true } // depois do "stop" o [player] é null: um erro tardio não religa a música
             }
             if (player != null) {
                 Log.i(TAG, "Sirene: tocando $uri")
@@ -432,6 +448,9 @@ class Sirene(private val ctx: Context) {
     }
 
     private companion object {
+        /** A cada tantas quedas da música, o toque passa pro próximo som ([tocarSom]): a primeira pode ser o audioserver (recomeça no mesmo), a seguinte já é do arquivo. */
+        const val QUEDAS_POR_SOM = 2
+
         /** O degrau de volume de alarme (de 15 no S24 FE) em que param os bipes de um alarme de teste. */
         const val VOLUME_DO_BIPE_DE_TESTE = 2
 
