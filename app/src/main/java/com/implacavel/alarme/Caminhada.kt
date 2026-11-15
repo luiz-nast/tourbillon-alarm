@@ -458,6 +458,7 @@ private fun maisTempo(ms: Long): String = if (ms < 60_000L) "${ms / 1000} MORE S
 private fun MiniTarefaAberta(tarefa: MiniTarefa, agora: Long, onVoltar: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("🔕 Beeps paused", color = AzulCaminhada, fontSize = 30.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
+        // m:ss do que falta, arredondado pra cima (o +999); o tempoAndado só formata os ms
         Text("${tempoAndado(tarefa.ate - agora + 999)} to repeat it", color = AzulCaminhada.copy(alpha = 0.8f), fontSize = 18.sp)
         Spacer(Modifier.height(20.dp))
         MiniTarefaDoPrazo(tarefa)

@@ -159,7 +159,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         private fun carregado(ctx: Context): Engine {
             engine?.let { return it }
             val caminho = arquivo(ctx)?.path ?: error("sem a pasta do app")
-            // a GPU primeiro (medido no S24 FE, TesteDaIa --ez gpu true: ler 1678 tokens leva 2,2 s na GPU e 12,9 s
+            // a GPU primeiro (medido no S24 FE, TesteDaIa na GPU: ler 1678 tokens leva 2,2 s na GPU e 12,9 s
             // na CPU; a 1ª palavra, 2,2 s contra 13 s; escrever fica parecido). Se ela não abrir, a CPU, como antes.
             if (!gpuFalhou && !soCpu) runCatching { return iniciar(ctx, caminho, Backend.GPU(), "GPU") }.onFailure { gpuFalhou = true }
             return iniciar(ctx, caminho, Backend.CPU(), "CPU")
