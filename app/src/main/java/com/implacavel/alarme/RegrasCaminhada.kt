@@ -7,13 +7,13 @@
 // satélites, que não escorrega como a posição) e a direção; e a posição do GPS tem que andar junto com essa
 // velocidade ([andou]). Caminhada é andar, não correr: em volta da piscina ou indo e voltando num corredor também
 // conta. O que não conta é ficar no lugar (balançando o celular na cama, o GPS pode até medir velocidade, mas o ponto
-// não sai dali). Medido no S24 FE (10-17): parado, a posição crua escorregou 15 m em 70 s dizendo ±1 m de precisão,
+// não sai dali). Medido no S24 FE: parado, a posição crua escorregou 15 m em 70 s dizendo ±1 m de precisão,
 // e a velocidade ficou em 0,00; andando em volta da piscina, a velocidade dava ~1,1 m/s e a posição andava junto (8°
 // de diferença na direção, no meio).
 //
 // Duas contas separadas: o que SOMA (só a caminhada que o GPS confirma, ou os passos logo depois dela) e o que CALA
 // OS BIPES (qualquer sinal de vida: passo no ritmo, ou o GPS vendo velocidade de andar). Num corredor coberto o GPS
-// não vê a velocidade, e o dono andava (até correndo) ouvindo "parado" e bipes cada vez mais altos (10-17, à noite,
+// não vê a velocidade, e o dono andava (até correndo) ouvindo "parado" e bipes cada vez mais altos (à noite,
 // com vizinho e família ouvindo): isso não pode. Quem balança o celular na cama não soma, mas também não ouve bipe:
 // está acordado, e o alarme só desliga andando de verdade.
 package com.implacavel.alarme
@@ -34,13 +34,13 @@ const val CAMINHADA_TESTE_MS = 3 * 60_000L
 const val PRAZO_SAIR_TESTE_MS = 30_000L
 
 /**
- * A mini tarefa do prazo: o dono dorme tão pesado que o prazo inteiro passa sem ele sentir (10-22). No primeiro bipe de
+ * A mini tarefa do prazo: o dono dorme tão pesado que o prazo inteiro passa sem ele sentir. No primeiro bipe de
  * parado depois do prazo ([PARADO_MS]), aparece um botão, uma vez só; ele abre a tela da frase pra repetir
- * ([fraseDaMiniTarefa]), e com ela aberta nenhum bipe toca (o dono, 10-30), por até [MINI_TAREFA_MAX_MS]. Repetida, o
+ * ([fraseDaMiniTarefa]), e com ela aberta nenhum bipe toca, por até [MINI_TAREFA_MAX_MS]. Repetida, o
  * prazo ganha mais isto (com as ondas de novo). O botão tem uma vida só: aberto (repetindo ou não), não volta; e, se
  * ele andou depois daquele bipe, o botão some e não volta: ele já acordou. No teste, [PREPARO_EXTRA_TESTE_MS].
  */
-const val PREPARO_EXTRA_MS = 5 * 60_000L // o dono, 10-28: eram 3
+const val PREPARO_EXTRA_MS = 5 * 60_000L // o dono achou 3 pouco
 
 const val PREPARO_EXTRA_TESTE_MS = 30_000L
 
@@ -50,7 +50,7 @@ const val PREPARO_EXTRA_TESTE_MS = 30_000L
  */
 const val MINI_TAREFA_MAX_MS = 60_000L
 
-/** O "voltar" da tela da mini tarefa nesse começo dela é o toque que abriu, repetido sem querer: não fecha (revisão de 10-31). */
+/** O "voltar" da tela da mini tarefa nesse começo dela é o toque que abriu, repetido sem querer: não fecha. */
 const val TOQUE_DUPLO_MS = 1_500L
 
 /** Quanto prazo a mini tarefa do [alarme] dá. */
@@ -69,7 +69,7 @@ fun ofereceMiniTarefa(bipe: Int, usado: Boolean, retirada: Boolean): Boolean = b
  * Depois do prazo pra sair, parado (sem sinal de vida: nem passo, nem velocidade no GPS, [Avaliacao.valeProBipe]) por
  * esse tempo: um bipe fraco ([primeiroBipeParado]); depois, um a cada [ENTRE_BIPES_PARADO_MS], um degrau de volume
  * mais alto, até o máximo no bipe [BIPES_PARADO_ATE_O_MAXIMO] (aos [PARADO_MAXIMO_MS]: 41 s), com o som forte, até
- * voltar a andar. Não zera nada. Pedido do dono (10-17): "20 segundos tranquilo sem beep, beep fraco em 23 s
+ * voltar a andar. Não zera nada. Pedido do dono: "20 segundos tranquilo sem beep, beep fraco em 23 s
  * crescendo de 3 em 3 s até 40 s virar o insuportável", tudo na tela ([bipeDoParado], [textoDoParado]).
  */
 const val PARADO_MS = 23_000L
@@ -100,7 +100,7 @@ private const val PRECISAO_VELOCIDADE_MAX = 1.0f
 private const val FIXOS_DA_VELOCIDADE = 5
 
 /**
- * Sem passo reconhecido (o celular parado na mão, o acelerômetro perdeu o ritmo: na caminhada de 10-17 à noite, 15
+ * Sem passo reconhecido (o celular parado na mão, o acelerômetro perdeu o ritmo: numa caminhada à noite, 15
  * de 30 s com o GPS a 0,8 m/s), o GPS sozinho ainda conta, se confirmar ([andou]) e até esta velocidade: a de quem
  * anda apressado. Mais rápido sem passo é bicicleta.
  */
@@ -245,7 +245,7 @@ fun emMetros(origem: Fixo, fixo: Fixo): Pair<Double, Double> {
  * é um passo. Andando ([andando]) depois de [PASSOS_PRA_ANDAR] passos seguidos no ritmo de quem anda (um a cada 0,3
  * a 1 s); para depois de [SEM_PASSO_PRA_PARAR_MS] sem passo. Dois picos colados (menos de [COLADO_MS]) são um passo
  * só: o segundo é ignorado (era um "para", e correndo, ou com o celular na mão, derrubava o ritmo e pedia 6 passos
- * novos: segundos de "parado" andando). Na gravação de 10-17: andando, reconheceu 97% dos segundos; parado, nenhum.
+ * novos: segundos de "parado" andando). Na gravação: andando, reconheceu 97% dos segundos; parado, nenhum.
  * Sacudir o celular, sentado, também passa: quem barra isso é o GPS.
  */
 class DetectorDePassos {
@@ -343,7 +343,7 @@ class DetectorDePassos {
  * abre ([PORTAO_ALCANCANDO_M]) pro ponto ir atrás até alcançar; parado, ou se nem assim alcança, pula pra lá (sem
  * travar nunca).
  *
- * O ganho era 0,15: nas voltas em volta da piscina (8 × 11 m, 10-17), o Doppler do S24 FE mede 10% a menos do que a
+ * O ganho era 0,15: nas voltas em volta da piscina (8 × 11 m), o Doppler do S24 FE mede 10% a menos do que a
  * posição anda e erra o rumo em 13 a 20°, e o puxão fraco levava ~6 s pra corrigir: as voltas saíam 11 a 17% menores,
  * com os cantos virando arcos ("círculos diferentes", disse o dono) e o centro passeando 3,2 a 4,7 m de uma volta pra
  * outra (o cru: 2,2 m). Com 0,3, a variação entre voltas volta à do cru (0,63 m de raio), o encolhimento cai pela

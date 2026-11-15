@@ -129,7 +129,7 @@ fun faseDaManha(conversa: Boolean, caminhada: Boolean, noPrazo: Boolean, verific
 
 /**
  * O modo da manhã que o Mistral lê ([FonteDoModo]), pela [fase] que a tela do alarme mostra ([faseDaManha]).
- * (o dono, 11-08): na caminhada (e no prazo pra sair), Instagram livre; na câmera (a etapa com o YouTube), YouTube livre;
+ * Decisão do dono: na caminhada (e no prazo pra sair), Instagram livre; na câmera (a etapa com o YouTube), YouTube livre;
  * qualquer outra etapa da atividade (a música, o bom dia, a conversa, as frases, a comemoração) é CONVERSA: tudo
  * trancado. Fora da atividade ([emAtividade]: um alarme com missão tocando), "nenhuma".
  */

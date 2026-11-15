@@ -1,7 +1,7 @@
 // A câmera frontal da missão com a detecção de rosto (ML Kit, no aparelho, sem internet), do serviço
 // ([CameraDaMissao]): aberta depois do bom dia, ela lê os olhos com a tela aberta ou fechada (serviço com o tipo
 // "camera", ganho no STOP com a tela na frente). A tela só mostra a imagem ([CameraOlhos]): liga o visor dela no
-// mesmo fluxo da câmera do serviço quando aparece, e solta quando some. Pedido do dono (10-22): fazer um post no
+// mesmo fluxo da câmera do serviço quando aparece, e solta quando some. Pedido do dono: fazer um post no
 // Instagram no meio da atividade sem a missão recomeçar; a câmera frontal continua vendo o rosto por baixo.
 package com.implacavel.alarme
 

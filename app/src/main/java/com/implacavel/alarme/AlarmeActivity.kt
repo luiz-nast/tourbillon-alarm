@@ -71,13 +71,13 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 
+private const val TRANSPARENTE = android.graphics.Color.TRANSPARENT
+
 /**
  * Tela do alarme tocando. Aberta pela notificação em tela cheia do [AlarmeService]; aparece por
  * cima da tela de bloqueio, acende a tela e fecha sozinha quando o alarme para.
  * Com a missão ligada, mostra as etapas de Missao.kt (e a da caminhada, de Caminhada.kt); sem ela, só o botão DESLIGAR.
  */
-private const val TRANSPARENTE = android.graphics.Color.TRANSPARENT
-
 class AlarmeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -117,7 +117,7 @@ private const val TRILHA_LADO_MIN_M = 40.0
  * (serviço com o tipo "location", ganho no STOP com a tela na frente), pra caminhada seguir com a tela fechada ou no
  * bolso, e passam da conversa pra caminhada sem desligar. Só o relógio da caminhada ([ContadorDaCaminhada], via
  * [aoAvaliar]) soma tempo e desenha a trilha; antes, o caminho anda (pra saber de onde a pessoa saiu) sem contar. Cada fixo vai pro log ([detalheDoFixo],
- * sem coordenadas): na caminhada de 10-17 à noite só havia o resumo de 30 s, e não deu pra saber por que os passos
+ * sem coordenadas): numa caminhada à noite só havia o resumo de 30 s, e não deu pra saber por que os passos
  * sumiram.
  */
 class SentidosDaCaminhada {
@@ -255,7 +255,7 @@ class SentidosDaCaminhada {
  * ou velocidade no GPS, somando ou não) e no instante em que o sinal para (os bipes de parado contam daí);
  * [aoConcluir] uma vez, com [metaMs] somados (a meta pode subir no meio: alarme de verdade no lugar do teste);
  * [aoDefeito] num celular sem GPS nenhum (um defeito não prende ninguém). Era o laço da tela da caminhada: foi pro
- * serviço pra caminhada seguir com a tela fechada, no bolso (10-22).
+ * serviço pra caminhada seguir com a tela fechada, no bolso.
  */
 class ContadorDaCaminhada(
     private val ctx: Context,
@@ -634,7 +634,7 @@ private fun fixoDe(local: Location) = Fixo(
 
 /**
  * O sinal médio (dB-Hz) dos 4 satélites mais fortes usados no fixo, só da banda L1 (o S24 FE ouve também a L5, que
- * mistura a conta); null sem nenhum. Na rua, andando, deu 41 a 46; dentro de casa, parado, 36 a 37 (10-17): ainda
+ * mistura a conta); null sem nenhum. Na rua, andando, deu 41 a 46; dentro de casa, parado, 36 a 37: ainda
  * só pro log, pra calibrar um dia um "céu aberto".
  */
 fun sinalDaL1(status: GnssStatus): Float? {

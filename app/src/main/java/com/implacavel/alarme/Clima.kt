@@ -1,4 +1,4 @@
-// A chuva de agora no lugar da pessoa, pra decidir a caminhada (o dono, 11-07): chuva fraca não muda nada; chuva FORTE
+// A chuva de agora no lugar da pessoa, pra decidir a caminhada: chuva fraca não muda nada; chuva FORTE
 // oferece trocar a caminhada na rua pela câmera (ele escolhe). A última localização que o celular já conhece (sem ligar
 // o GPS) e o tempo atual do Open-Meteo (sem chave). Pro Open-Meteo só vão a latitude e a longitude arredondadas (uns
 // 1 km). Sem localização, sem internet ou com erro, não dá pra saber: aí não oferece nada, segue a caminhada.

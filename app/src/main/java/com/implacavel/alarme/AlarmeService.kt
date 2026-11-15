@@ -29,36 +29,6 @@ import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
 
-/**
- * Serviço em primeiro plano que toca o alarme em andamento ([Ajustes.emAndamento], gravado pelo
- * [AlarmeReceiver]) até a missão ser cumprida, ou até o DESLIGAR, em alarme sem missão: esse é o
- * único fim do alarme ([concluir]). Controla a [Sirene] e a notificação que abre a
- * [AlarmeActivity] em tela cheia, e não deixa ninguém fugir:
- * - tela do alarme fechada (Home, arrastar o app, apagar a tela): em [TELA_FECHADA_MS] a música
- *   volta e a tela reabre; o anel da câmera fica onde estava;
- * - depois do "stop", a voz do celular dá bom dia, [PAUSA_DEPOIS_DA_SAUDACAO_MS] depois diz "Activity
- *   starting now", toca o bipe positivo e começa a câmera; a cada 10 min completos, a voz avisa;
- * - na metade, o anel para e vem a verificação: a voz fala as [Tempos.frases] frases do dia (0 a 10) e a pessoa repete
- *   cada uma; sem responder por [SILENCIO_APITO_MS], um apito alto, e em [SILENCIO_ZERA_MS] o anel zera e a
- *   música volta. Depois dela, a câmera fica mais exigente com os olhos;
- *   daí a música só fica calada enquanto o relógio da câmera ([tiqueDaCamera]) vê a pessoa
- *   olhando; sem aviso, a vigia bipa a cada [AVISO_SEM_OLHAR_MS], cada vez mais alto (o último, no
- *   volume máximo do celular; no teste, no máximo [Sirene.VOLUME_DO_BIPE_DE_TESTE]), e em [DESISTENCIA_MS] religa a música (o anel zera);
- * - a cada [RENOVAR_MS], empurra pra frente a retomada no AlarmManager: se o app cair, travar ou
- *   for encerrado, ou se o celular desligar, o alarme volta sozinho;
- * - se o app caiu [LIMITE_QUEDAS] vezes neste alarme, é defeito, não truque: ele volta com o
- *   DESLIGAR, pra um defeito não prender ninguém num alarme que nunca desliga. Numa queda só,
- *   o desafio continua valendo;
- * - no despertador "conversa + caminhada" ([Alarme.caminhada]), depois do bom dia vêm a conversa com a IA
- *   ([ModeloLocal], no celular) e a caminhada pelo GPS, chova ou faça sol, com ou sem internet (sem a IA,
- *   direto pra caminhada). Quem decide tudo são os relógios daqui: a IA só produz o texto das falas.
- *
- * Comandos pela action do Intent, cada um com uma função no companion: tocar, encerrar sem missão (defeito ou cabo),
- * desligar, reexibir, tela, silenciar, volume, dar tempo, ondas, fase e cancelar teste. Na
- * conversa, quem ouve é a [Escuta], daqui mesmo; na caminhada, o GPS e os passos ([SentidosDaCaminhada]) e o relógio
- * deles ([ContadorDaCaminhada]) também são daqui: a conversa e a caminhada seguem com a tela fechada.
- * O comando reexibir vem da notificação arrastada pro lado.
- */
 /** Um passo da verificação do meio: a [frase] da vez ([numero] de [total]; vazia na fala de abertura e no agradecimento), se é a [suaVez] de repetir e o que o reconhecedor do serviço já [ouvido]. */
 data class Verificacao(val frase: String, val numero: Int, val total: Int, val suaVez: Boolean, val ouvido: String = "")
 
@@ -106,6 +76,18 @@ private enum class EtapaDaManha { CONVERSA, CAMINHADA }
 /** Um pedido pra IA: chama o motor com o [aoResponder] (que recebe a fala ou null). Guardado pra pedir de novo numa falha. */
 private typealias PedidoDaIa = (aoResponder: (String?) -> Unit) -> Unit
 
+/**
+ * Serviço em primeiro plano que toca o alarme em andamento ([Ajustes.emAndamento], gravado pelo [AlarmeReceiver])
+ * até a missão ser cumprida, ou até o DESLIGAR, em alarme sem missão: esse é o único fim do alarme ([concluir]).
+ * Controla a [Sirene] e a notificação que abre a [AlarmeActivity] em tela cheia, e não deixa ninguém fugir (o que
+ * cada etapa faz está no README). A cada [RENOVAR_MS] empurra a retomada no AlarmManager: se o app cair, o alarme
+ * volta sozinho; com [LIMITE_QUEDAS] quedas é defeito, não truque, e ele volta com o DESLIGAR.
+ *
+ * Comandos pela action do Intent, cada um com uma função no companion: tocar, encerrar sem missão (defeito ou cabo),
+ * desligar, tela, silenciar, volume, dar tempo, ondas, fase, cancelar teste, mini tarefa e trocar câmera; o reexibir
+ * vem da notificação arrastada pro lado. A conversa (a [Escuta]), o GPS e os passos ([SentidosDaCaminhada],
+ * [ContadorDaCaminhada]) são daqui, e seguem com a tela fechada.
+ */
 class AlarmeService : Service() {
 
     companion object {
@@ -890,7 +872,7 @@ class AlarmeService : Service() {
      * da câmera do serviço ([leituraDaCamera]; um quadro velho, câmera travada, é sem rosto); o anel ([olhado]) sobe só
      * olhando e, antes da verificação, para no fim do modo fácil; a cada [AVISO_OLHANDO_MS] olhando, e no instante em
      * que parou, [olhou] (a vigia recomeça, os avisos de 10 min, a verificação); com a meta, o alarme desliga. Era o
-     * laço da tela da câmera: foi pro serviço pra câmera seguir com a tela fechada (10-22).
+     * laço da tela da câmera: foi pro serviço pra câmera seguir com a tela fechada.
      */
     private val tiqueDaCamera = object : Runnable {
         override fun run() {
@@ -1037,7 +1019,7 @@ class AlarmeService : Service() {
      * A vez da pessoa repetir a [frase]: o reconhecedor do serviço escuta em inglês até ela repetir ([repetiu]); a tela
      * mostra o que ele ouve ([Verificacao.ouvido]). Fala que não acerta a frase só segura a contagem do silêncio até o
      * prazo da frase. Sem reconhecimento de voz (ex.: inglês sem internet), a verificação é pulada. Era da tela: foi pro
-     * serviço pra verificação seguir com a tela fechada (10-22).
+     * serviço pra verificação seguir com a tela fechada.
      */
     private fun ouvirFrase(frase: String, rodada: Int) {
         pararOuvinteDaFrase()
@@ -2017,7 +1999,7 @@ class AlarmeService : Service() {
     /**
      * O botão "switch to camera" da chuva forte: derruba a caminhada na rua inteira e entra na missão da câmera, que
      * também dispensa o alarme ([EtapaOlhar]: meta ou defeito). A câmera só anda com [naConversaECaminhada] falsa, e forçar
-     * [CaminhoDaManha.CAMERA] é o que a torna falsa (1139) e herda a dispensa provada do "câmera + frases". Só de ida
+     * [CaminhoDaManha.CAMERA] é o que a torna falsa ([naConversaECaminhada]) e herda a dispensa provada do "câmera + frases". Só de ida
      * (não há voltar pra caminhada), e só com a câmera já liberada: sem permissão, a troca poderia prender, então nem
      * oferece. Fora da caminhada (já trocou, ou nem está nela): nada. Idempotente contra comando repetido.
      */

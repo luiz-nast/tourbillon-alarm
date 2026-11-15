@@ -2,8 +2,7 @@
 // mesmo tempo, em até [BUSCA_MAX_MS]: o artigo inteiro da Wikipédia em inglês que mais bate com a busca, o começo dos
 // três primeiros (em inglês) e dos dois primeiros em português (o que é do Brasil está melhor lá), e o Google Notícias
 // (as mais recentes). Antes de ir pra IA, o texto é tratado ([fatosRelevantes]): vira frases, cada uma ganha nota pelas
-// palavras da busca, e só as melhores vão. Antes (até 10-28), iam as duas primeiras frases dos artigos e os títulos das
-// notícias, sem tratar nada, e o dono achou raso: "parece que nada trata as informações antes de alimentar o modelo".
+// palavras da busca, e só as melhores vão.
 // O modelo continua no celular, sem internet: só o que ele pede pra procurar vai pela rede. Sem internet, vem null e a
 // IA responde com o que sabe. A leitura das respostas é pura (testada em ConversaTest); a busca roda na thread do modelo.
 package com.implacavel.alarme

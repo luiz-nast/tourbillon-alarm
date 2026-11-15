@@ -291,7 +291,7 @@ private const val NAO_ENTENDEU_MAX_PALAVRAS = 14
 
 /**
  * Tantas vezes seguidas sem entender: um bipe leve pra médio ([BIPE_DO_NAO_ENTENDI], o degrau no [volumeDoBipe]) pra
- * acordar a pessoa, e a IA repete a última fala que ela entendeu (a pergunta volta uns segundos). Pedido do dono (10-22):
+ * acordar a pessoa, e a IA repete a última fala que ela entendeu (a pergunta volta uns segundos). Pedido do dono:
  * respondendo em português ou só grunhindo, a IA seguia o processo julgando o que ele nem disse.
  */
 const val NAO_ENTENDIDOS_ATE_O_BIPE = 3
@@ -299,7 +299,7 @@ const val NAO_ENTENDIDOS_ATE_O_BIPE = 3
 /**
  * O juízo da IA sobre a última resposta dele, que ela põe no começo de cada fala ([instrucaoDoTreinador]): uma resposta
  * de verdade ([BOM]), uma enrolada ([VAGO]: ela xinga e pergunta de novo) ou uma péssima ([PESSIMO]: ela xinga, e o
- * alarme bipa antes). Pedido do dono (10-28): a IA estava amiga demais; "se eu estiver respondendo nada com nada, eu
+ * alarme bipa antes). Pedido do dono: a IA estava amiga demais; "se eu estiver respondendo nada com nada, eu
  * quero ouvir bipe". Os erros do reconhecedor de voz não contam: ela julga o que ele quis dizer.
  */
 enum class Veredito { BOM, VAGO, PESSIMO }
@@ -307,7 +307,7 @@ enum class Veredito { BOM, VAGO, PESSIMO }
 /**
  * Separa o juízo da fala da IA ("[OK]", "[VAGUE]", "[BAD]"; também sem colchetes, em maiúsculas, com dois-pontos) do
  * resto. O normal é ele vir no começo, mas o modelo às vezes enfeita (negrito, aspas, um travessão de lista) ou põe no
- * fim; e uma etiqueta que sobra em qualquer lugar sai da fala, senão a voz lê "BAD" (revisão de 10-28). Sem juízo (a IA
+ * fim; e uma etiqueta que sobra em qualquer lugar sai da fala, senão a voz lê "BAD". Sem juízo (a IA
  * esqueceu), vale [Veredito.BOM]: na dúvida, ninguém leva bipe.
  */
 fun vereditoDaFala(resposta: String): Pair<Veredito, String> {
@@ -404,7 +404,7 @@ private const val PALAVRAS_MINIMAS = 3
  * [instrucaoDoTreinador]); devolve o que procurar, limpo (sem aspas nem ponto final, até [CONSULTA_MAX_PALAVRAS]
  * palavras e [CONSULTA_MAX_LETRAS] letras), ou null se a resposta é uma fala normal. Aceita maiúsculas e minúsculas
  * e uma pontuação antes ("- Search: ..."). O que vier depois de dois-pontos, ponto ou ponto e vírgula fica de fora:
- * no teste de 10-18 o modelo emendou o chute dele na consulta ("who invented the transistor: Alexander Fleming…"), e
+ * num teste o modelo emendou o chute dele na consulta ("who invented the transistor: Alexander Fleming…"), e
  * o chute errado puxava artigos errados.
  */
 fun consultaDaBusca(resposta: String): String? {
@@ -462,7 +462,7 @@ const val ANOTACOES_MAX_TOKENS = 180
 
 /**
  * As anotações valem por isso depois de escritas (a manhã seguinte, com folga pra um alarme mais tarde); depois, a IA
- * começa sem elas. É a janela de um dia que o dono pediu (10-18): a IA erra (o reconhecimento de voz erra), e uma pilha
+ * começa sem elas. É a janela de um dia que o dono pediu: a IA erra (o reconhecimento de voz erra), e uma pilha
  * de anotações erradas de semanas viraria cobrança sobre coisas que ela nem entendeu direito.
  */
 const val MEMORIA_VALIDA_MS = 36 * 3_600_000L
@@ -518,7 +518,7 @@ fun pedidoDeContinuar(respostaAnterior: String, resposta: String): String =
 
 /**
  * As regras da IA (a "instrução de sistema", em inglês): um treinador da manhã bem informado e exigente, não um amigo
- * dele (10-28: a IA estava "muito meu amigo"), que chama a pessoa de "sir", julga cada resposta dele ([Veredito]: a
+ * dele (a IA estava "muito meu amigo"), que chama a pessoa de "sir", julga cada resposta dele ([Veredito]: a
  * etiqueta no começo da fala, o xingamento e o bipe), conta coisas (um fato, uma opinião, uma dica) antes de perguntar,
  * responde o que ele pergunta, pode pedir uma busca na internet ("SEARCH: ...", [consultaDaBusca]) e usa o que sabe
  * dele: o que ele contou de si ([sobreEle], Settings › "About you"), as palavras que ele usa e o reconhecedor erra
@@ -526,9 +526,6 @@ fun pedidoDeContinuar(respostaAnterior: String, resposta: String): String =
  * do dia (manchetes em português, que ela traduz), o dia e as [metas] dele, se vierem. Fica no assunto enquanto ele
  * rende e só troca quando morre (o dono reclamou da IA que pulava de assunto a cada resposta, como se só medisse o
  * barulho dele). Nunca manda dormir nem diz que o alarme acabou. [hora] é a de agora.
- *
- * Antes (até 10-18) cada fala era só uma pergunta de 15 palavras: o dono achou a IA "burra", seguindo um script,
- * sem nunca contar nada nem se conectar com ele, e teve que repetir em 4 testes que quer aprender eletrônica.
  */
 fun instrucaoDoTreinador(noticias: List<String>, metas: String, hora: LocalTime, sobreEle: String = "", memoria: String = "", palavras: List<String> = emptyList()): String = buildString {
     val agora = hora.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US))

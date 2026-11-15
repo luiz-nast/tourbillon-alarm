@@ -1,4 +1,4 @@
-// O Gemma do Tourbillon aberto pro Chiron Routine, o outro app do dono (11-02: "o mesmo modelo compartilhado entre o
+// O Gemma do Tourbillon aberto pro Chiron Routine, o outro app do dono ("o mesmo modelo compartilhado entre o
 // Tourbillon e o Chiron"). O modelo (2,6 GB) fica só aqui; o Chiron manda a instrução dele e a frase da pessoa, e
 // recebe a resposta (uma linha JSON com a habilidade escolhida). Uma só cópia do modelo na memória.
 //
@@ -74,7 +74,7 @@ class ServicoDeIa : Service() {
         ModeloLocal.perguntaAvulsa(this, instrucao, null) { if (numero == pedidos) soltarDaquiAPouco() }
     }
 
-    /** A instrução do cliente, até [INSTRUCAO_MAX] letras. (o dono, 11-08): cortava calado; agora avisa no log. */
+    /** A instrução do cliente, até [INSTRUCAO_MAX] letras. Decisão do dono: cortava calado; agora avisa no log. */
     private fun instrucaoDe(msg: Message): String {
         val instrucao = msg.data?.getString("instrucao").orEmpty()
         if (instrucao.length > INSTRUCAO_MAX) Log.w(TAG, "IA do celular: instrução de ${instrucao.length} letras, cortada em $INSTRUCAO_MAX")

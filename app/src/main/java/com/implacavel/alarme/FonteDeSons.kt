@@ -1,4 +1,4 @@
-// A biblioteca de sons ([Sons]) aberta pro Mistral, o outro app do dono (10-31): a mesma base de músicas nos dois.
+// A biblioteca de sons ([Sons]) aberta pro Mistral, o outro app do dono: a mesma base de músicas nos dois.
 // Só entra quem tem a permissão com.implacavel.alarme.permission.SONS, que é de assinatura: só apps assinados com a mesma
 // chave deste. O Mistral lista, toca, adiciona e apaga:
 //   content://com.implacavel.alarme.sons            lista (colunas nome, tamanho)
@@ -6,7 +6,7 @@
 //   content://com.implacavel.alarme.sons/novo/NOME  abrir pra gravar ("w"): ao fechar, vira um som da biblioteca
 // Só nomes que já estão na lista são lidos ou apagados: nada de caminho vindo de fora. Um som em uso (o padrão, o de um
 // alarme ou o que está tocando agora) não é apagado daqui: o alarme da manhã nunca perde a música por um clique no outro
-// app (revisão, 10-31). Um envio que falhou no meio não entra (o Mistral fecha com erro).
+// app. Um envio que falhou no meio não entra (o Mistral fecha com erro).
 package com.implacavel.alarme
 
 import android.content.ContentProvider

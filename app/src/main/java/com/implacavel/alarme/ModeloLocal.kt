@@ -48,7 +48,7 @@ const val CONTEXTO_TOKENS = 4096
  * [ateAUltimaFrase] tira a frase pela metade. No S24 FE o modelo escreve uns 17 a 19 tokens por segundo: uma fala cheia
  * leva uns 3 s pra nascer (e uns 11 s pra voz dizer). Era 84 (40 palavras): o dono achou que falava demais.
  */
-const val RESPOSTA_MAX_TOKENS = 72 // 10-28: +8 pro juízo ("[VAGUE]") e a resposta da busca, que agora conclui
+const val RESPOSTA_MAX_TOKENS = 72 // +8 pro juízo ("[VAGUE]") e a resposta da busca, que agora conclui
 
 /** A amostragem do Gemma 4 (a recomendada pelo Google, com a temperatura um pouco abaixo de 1: varia as falas sem perder o fio). */
 private val AMOSTRAGEM = SamplerConfig(topK = 64, topP = 0.95, temperature = 0.9)
@@ -159,7 +159,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         private fun carregado(ctx: Context): Engine {
             engine?.let { return it }
             val caminho = arquivo(ctx)?.path ?: error("sem a pasta do app")
-            // 11-08: a GPU primeiro (medido no S24 FE, TesteDaIa --ez gpu true: ler 1678 tokens leva 2,2 s na GPU e 12,9 s
+            // a GPU primeiro (medido no S24 FE, TesteDaIa --ez gpu true: ler 1678 tokens leva 2,2 s na GPU e 12,9 s
             // na CPU; a 1ª palavra, 2,2 s contra 13 s; escrever fica parecido). Se ela não abrir, a CPU, como antes.
             if (!gpuFalhou && !soCpu) runCatching { return iniciar(ctx, caminho, Backend.GPU(), "GPU") }.onFailure { gpuFalhou = true }
             return iniciar(ctx, caminho, Backend.CPU(), "CPU")
@@ -168,7 +168,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
         /** A GPU não abriu uma vez: até o processo morrer, só a CPU (não paga a tentativa de novo a cada carga). */
         @Volatile private var gpuFalhou = false
 
-        /** (o dono, 11-08): a bateria "CPU forçada" do Chiron, pelo cabo ([TesteDaIa] --es modelo cpu): só a CPU até o "gpu". */
+        /** A bateria "CPU forçada" do Chiron, pelo cabo ([TesteDaIa] --es modelo cpu): só a CPU até o "gpu". */
         @Volatile private var soCpu = false
 
         /** Pelo cabo: o modelo sai da memória e a próxima carga vem só na CPU ([cpu]) ou tenta a GPU de novo, mesmo se ela falhou. */
@@ -193,8 +193,8 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
             return novo
         }
 
-        // A conversa das perguntas do Chiron (só na thread do modelo). 11-07: cada pergunta numa conversa limpa; antes, até
-        // 12 perguntas ficavam no histórico ("como exemplos") e uma resposta errada puxava a próxima pro mesmo lado. A API
+        // A conversa das perguntas do Chiron (só na thread do modelo). Cada pergunta numa conversa limpa: com várias no
+        // histórico ("como exemplos"), uma resposta errada puxava a próxima pro mesmo lado. A API
         // (0.16.1) não clona conversa, então a "reserva": logo depois de cada resposta, a usada fecha e a próxima já nasce
         // lendo a instrução (uns 12 s no S24 FE), enquanto a voz do Chiron fala e a pessoa responde. Uma por vez na memória.
         private var avulsa: Conversation? = null
@@ -249,7 +249,7 @@ class ModeloLocal(ctx: Context, private val instrucao: String, private val abert
                 handler.post { aoResponder(texto) }
                 // a pergunta foi pro histórico: a próxima já começa noutra, limpa
                 if (pergunta != null && avulsa != null) {
-                    // (o dono, 11-08): com um alarme na frente (ou na CPU), a reserva não lê a instrução; a usada fecha
+                    // Decisão do dono: com um alarme na frente (ou na CPU), a reserva não lê a instrução; a usada fecha
                     if (semVezAgora(0L) != null) return@execute fecharAvulsa()
                     val r = SystemClock.elapsedRealtime()
                     runCatching { reservarAvulsa(app, instrucao) }.onFailure { fecharAvulsa() }

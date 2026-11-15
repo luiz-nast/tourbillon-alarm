@@ -1,4 +1,4 @@
-// O modo da manhã aberto pro Mistral, o outro app do dono. (o dono, 11-08): "durante a atividade da manhã do
+// O modo da manhã aberto pro Mistral, o outro app do dono. Decisão do dono: "durante a atividade da manhã do
 // Tourbillon, ele controla o Mistral". Só leitura, com a mesma permissão de assinatura da [FonteDeSons]:
 //   content://com.implacavel.alarme.modo   uma linha: etapa (CONVERSA, CAMINHADA, CAMERA ou nenhuma) e valeAte
 // (epoch, ms: agora + 90 s na atividade, 0 fora dela; [modoDaManha], [modoValeAte]). Quem decide é o Mistral, e ele
@@ -22,7 +22,7 @@ class FonteDoModo : ContentProvider() {
     }
 
     companion object {
-        /** (o dono, 11-08): o teste pelo cabo finge uma etapa até a hora dada, sem alarme nem som (TesteDaIa --es modo). */
+        /** O teste pelo cabo finge uma etapa até a hora dada, sem alarme nem som (TesteDaIa --es modo). */
         @Volatile var fingido: Pair<String, Long>? = null
     }
 

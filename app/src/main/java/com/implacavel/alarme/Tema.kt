@@ -27,7 +27,7 @@ import java.time.ZonedDateTime
 val VermelhoAlarme = Color(0xFF8F2E1D)
 val VinhoAlarme = Color(0xFF2A0D08)
 
-/** A etapa da caminhada (as ondas do prazo pra sair e a rua) é azul, não vermelha: pedido do dono (10-17). */
+/** A etapa da caminhada (as ondas do prazo pra sair e a rua) é azul, não vermelha: pedido do dono. */
 val AzulCaminhada = Color(0xFF0D47A1)
 val FundoCaminhada = listOf(Color(0xFFF3F9FF), Color(0xFFBBDEFB))
 
@@ -55,8 +55,8 @@ private val Claro = lightColorScheme(
 )
 
 /**
- * A noite do Tourbillon Alarm (a tela principal e o editor, 10-17, o dono pediu componentes escuros), agora na paleta
- * única dos apps do dono (11-02): fundo quase preto azulado, cartões em cinza-azulado, ferrugem no que acende e chama
+ * A noite do Tourbillon Alarm (a tela principal e o editor, o dono pediu componentes escuros), agora na paleta
+ * única dos apps do dono: fundo quase preto azulado, cartões em cinza-azulado, ferrugem no que acende e chama
  * (botões, interruptor ligado, o tipo do alarme; ferrugem clara nos textos e traços sobre o escuro), cinzas no resto e
  * vermelho claro no erro. Nunca segue o sistema: é sempre esta.
  */
@@ -93,7 +93,7 @@ private val Noite = darkColorScheme(
 )
 
 /**
- * Escala única dos apps do dono (Tourbillon, Chiron e Mistral, 11-07): mudar uma medida é mudar uma linha aqui.
+ * Escala única dos apps do dono (Tourbillon, Chiron e Mistral): mudar uma medida é mudar uma linha aqui.
  * Título de tela 28, de diálogo 22, de cartão 18; corpo 16, secundário 14, legenda 12; rótulo de seção 13 em negrito.
  */
 private val base = Typography()

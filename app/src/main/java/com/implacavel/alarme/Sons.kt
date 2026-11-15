@@ -1,10 +1,10 @@
-// A biblioteca de sons do app (pedido do dono, 10-17): todo som escolhido, pela tela principal ou pelo editor de um
+// A biblioteca de sons do app: todo som escolhido, pela tela principal ou pelo editor de um
 // alarme, é COPIADO pra dentro do app, e fica: o dia em que o arquivo sair da pasta Downloads, o app já tem a versão
 // dele. Cada alarme escolhe o seu ([Alarme.som], o nome do arquivo na biblioteca); sem escolha, vale o padrão
 // ([Sons.padrao]); sem padrão, o toque de alarme do celular (Sirene). A pasta é protegida (como os alarmes): dá pra
 // ler antes do primeiro desbloqueio, então depois de um reinício a música toca, e não o toque do sistema.
 // O app não traz música nenhuma: a biblioteca começa vazia. O Mistral usa a mesma biblioteca (FonteDeSons): toca
-// os sons na tela de bloqueio dele e também adiciona e apaga (o dono, 10-31).
+// os sons na tela de bloqueio dele e também adiciona e apaga.
 //
 // Pelo cabo, no app de depuração (veja o README):
 //   adb push som.mp3 /data/local/tmp/ && adb shell run-as com.implacavel.alarme cp /data/local/tmp/som.mp3 /data/user_de/0/com.implacavel.alarme/app_sons/

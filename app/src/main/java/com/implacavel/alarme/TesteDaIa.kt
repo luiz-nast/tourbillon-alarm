@@ -5,7 +5,7 @@
 //   adb shell am broadcast -n com.implacavel.alarme/.TesteDaIa
 //   adb logcat -s Implacavel
 // Pra comparar outro tamanho de conversa (em tokens), sem recompilar: --ei tokens 4096
-// Na GPU em vez da CPU (11-08: ler a instrução na CPU leva ~20 s): --ez gpu true
+// Na GPU em vez da CPU (ler a instrução na CPU leva ~20 s): --ez gpu true
 // O modelo compartilhado (o do Chiron e da manhã) recarregado só na CPU, sem rodar o teste: --es modelo cpu; de volta à
 // GPU: --es modelo gpu (o processo que morre também volta à GPU)
 // Com um alarme tocando, não roda, e um alarme que começa no meio dele fica sem a IA ([ModeloLocal.emTeste]): o

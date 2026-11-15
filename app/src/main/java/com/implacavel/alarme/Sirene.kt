@@ -183,7 +183,7 @@ class Sirene(private val ctx: Context) {
     fun bipe(n: Int, degraus: Int = BIPES_ATE_ZERAR, som: Int = if (n >= degraus) R.raw.bipe_final else R.raw.bipe): Long {
         val maximo = audio.getStreamMaxVolume(AudioManager.STREAM_ALARM)
         // No teste (em casa, com família e vizinho ouvindo), os bipes ficam baixinhos ([VOLUME_DO_BIPE_DE_TESTE]) e sem
-        // o apito agudo do fim: é só pra quem segura o celular perceber. A 40% (10-17), um teste à noite virou um
+        // o apito agudo do fim: é só pra quem segura o celular perceber. A 40%, um teste à noite virou um
         // vexame. No alarme, vão ao máximo
         val teste = foto?.alarme?.deTeste == true
         val degrau = volumeDoBipe(n, maximo, degraus).let { if (teste) minOf(it, VOLUME_DO_BIPE_DE_TESTE) else it }

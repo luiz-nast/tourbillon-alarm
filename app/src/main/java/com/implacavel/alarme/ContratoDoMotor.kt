@@ -1,5 +1,5 @@
 // O contrato do motor compartilhado: o que vale pra todo cliente que pergunta de fora ([ServicoDeIa]; hoje, o Chiron),
-// num lugar só. (o dono, 11-08): "os parâmetros de geração ficam num lugar só do Tourbillon e valem para todos os
+// num lugar só. Decisão do dono: "os parâmetros de geração ficam num lugar só do Tourbillon e valem para todos os
 // clientes; cada app guarda só a sua instrução e a leitura do JSON". O cliente manda a instrução, a frase e, se quiser,
 // o prazo; o resto é daqui. O que é do motor ([ModeloLocal]: a GPU primeiro, uma thread só, uma conversa limpa por
 // pedido, nunca cancelProcess) vale também pra conversa da manhã: um ajuste genérico feito por causa do Chiron entra lá.
@@ -12,7 +12,7 @@ import com.google.ai.edge.litertlm.SamplerConfig
 internal val AMOSTRAGEM_AVULSA = SamplerConfig(topK = 20, topP = 0.9, temperature = 0.2)
 
 /**
- * Tamanho máximo da resposta de uma pergunta de fora (uma linha JSON). (o dono, 11-08): era 120; medido na bateria 1b
+ * Tamanho máximo da resposta de uma pergunta de fora (uma linha JSON). Decisão do dono: era 120; medido na bateria 1b
  * (339 respostas), a maior saída teve 111 letras (~32 tokens); o "conversar" com a fala de até 20 palavras dá ~54. Com
  * 17 a 19 tokens por segundo na GPU, o pior caso cai de ~8 s pra ~4 s. Passou do teto, o JSON sai cortado e valem as
  * regras do cliente.
@@ -28,7 +28,7 @@ const val CHAVE_DO_PRAZO = "ate"
 /**
  * Por que uma pergunta de fora fica sem resposta, sem gerar (null = vai pro modelo): o [alarme] na frente
  * ([ServicoDeIa.alarmeNaFrente]), o prazo [ate] (0 = sem prazo) já passado em [agora], ou o modelo [naCpu] (a GPU não
- * abriu: ler a instrução leva 12 a 21 s, e o cliente responde pelas regras dele). (o dono, 11-08): conferido na
+ * abriu: ler a instrução leva 12 a 21 s, e o cliente responde pelas regras dele). Decisão do dono: conferido na
  * chegada, de novo na vez dela, na thread do modelo, e antes da reserva; antes, só o alarme e só na chegada, e as
  * perguntas abandonadas faziam fila ali. A conversa da manhã não passa por aqui: na CPU, ela segue como sempre.
  */
