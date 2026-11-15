@@ -62,7 +62,7 @@ O teto de 64 tokens cabe a maior resposta medida ao Chiron (~54 tokens), com a f
 
 ## Testes pelo cabo (sem som)
 
-- Conversa da manhã de mentira, na CPU ou na GPU: `adb shell am broadcast -n com.implacavel.alarme/.TesteDaIa [--ez gpu true]`
+- Conversa da manhã de mentira, na CPU ou na GPU: `adb shell am broadcast -n com.implacavel.alarme/.TesteDaIa [--ez gpu false]`
   e `adb logcat -s Implacavel`.
 - O modelo compartilhado (o do Chiron e da manhã) só na CPU, sem rodar o teste:
   `adb shell am broadcast -n com.implacavel.alarme/.TesteDaIa --es modelo cpu`; de volta à GPU:
