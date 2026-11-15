@@ -9,7 +9,6 @@ package com.implacavel.alarme
 import android.Manifest
 import android.app.Activity
 import android.app.KeyguardManager
-import android.os.SystemClock
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -43,7 +42,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -200,13 +198,7 @@ fun EtapaFalar(metaMs: Long, onStop: () -> Unit) {
 fun EtapaVerificacao(passo: Verificacao) {
     val ouvido = passo.ouvido
     val ultimaResposta by AlarmeService.ultimaResposta.collectAsStateWithLifecycle()
-    var agora by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(250)
-            agora = SystemClock.elapsedRealtime()
-        }
-    }
+    val agora = relogioACada(250)
     val semResposta = agora - ultimaResposta
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         val titulo = when {
@@ -278,13 +270,7 @@ fun EtapaSaudacao(hora: Int, caminhada: Boolean = false) {
 fun EtapaConversa(conversa: Conversa) {
     val ouvido = conversa.ouvido
     val ultimaFala by AlarmeService.ultimaFala.collectAsStateWithLifecycle()
-    var agora by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(250)
-            agora = SystemClock.elapsedRealtime()
-        }
-    }
+    val agora = relogioACada(250)
     val calado = agora - ultimaFala
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(ANEL_CONVERSA), contentAlignment = Alignment.Center) {
@@ -378,13 +364,7 @@ fun EtapaOlhar(
         return
     }
     // A câmera, o anel e a contagem pra zerar são do serviço (seguem com a tela fechada): aqui só se desenha
-    var agora by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(PASSO_DA_CAMERA_MS)
-            agora = SystemClock.elapsedRealtime()
-        }
-    }
+    val agora = relogioACada(PASSO_DA_CAMERA_MS)
     val olhadoMs by AlarmeService.olhado.collectAsStateWithLifecycle()
     val ultimoOlhar by AlarmeService.ultimoOlhar.collectAsStateWithLifecycle()
     // Depois da verificação do meio, a câmera fica mais exigente com os olhos

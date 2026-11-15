@@ -1,6 +1,7 @@
-// Compartilhado pelas telas: temas (Claro no alarme, Noite na tela principal), cores fixas da tela do alarme, o relógio agoraACada e lidoAoVoltar.
+// Compartilhado pelas telas: temas (Claro no alarme, Noite na tela principal), cores fixas da tela do alarme, os relógios relogioACada e agoraACada e lidoAoVoltar.
 package com.implacavel.alarme
 
+import android.os.SystemClock
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -8,9 +9,9 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -119,18 +120,23 @@ fun TemaImplacavel(escuro: Boolean = false, content: @Composable () -> Unit) {
     else MaterialTheme(colorScheme = Claro, content = content)
 }
 
+/** O relógio do aparelho (SystemClock.elapsedRealtime), que se atualiza sozinho a cada [intervaloMs]. */
+@Composable
+fun relogioACada(intervaloMs: Long): Long = produceState(SystemClock.elapsedRealtime(), intervaloMs) {
+    while (true) {
+        delay(intervaloMs)
+        value = SystemClock.elapsedRealtime()
+    }
+}.value
+
 /** Hora atual, que se atualiza sozinha a cada [intervaloMs] (relógio da tela do alarme, textos "toca em 9 h"). */
 @Composable
-fun agoraACada(intervaloMs: Long): ZonedDateTime {
-    var agora by remember { mutableStateOf(ZonedDateTime.now()) }
-    LaunchedEffect(intervaloMs) {
-        while (true) {
-            delay(intervaloMs)
-            agora = ZonedDateTime.now()
-        }
+fun agoraACada(intervaloMs: Long): ZonedDateTime = produceState(ZonedDateTime.now(), intervaloMs) {
+    while (true) {
+        delay(intervaloMs)
+        value = ZonedDateTime.now()
     }
-    return agora
-}
+}.value
 
 /**
  * O que [ler] devolve, lido de novo toda vez que a tela volta pro primeiro plano (depois do diálogo de

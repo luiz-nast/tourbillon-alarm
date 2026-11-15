@@ -46,7 +46,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -379,15 +378,8 @@ fun EtapaCaminhada(
 ) {
     val ctx = LocalContext.current
     val activity = LocalActivity.current
-    var ligada by remember { mutableStateOf(gpsLigado(ctx)) }
-    var agora by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(CONFERIR_MS)
-            agora = SystemClock.elapsedRealtime()
-            ligada = gpsLigado(ctx)
-        }
-    }
+    val agora = relogioACada(CONFERIR_MS)
+    val ligada = remember(agora) { gpsLigado(ctx) }
 
     val leitura = recente(sentidos.leitura, agora)
     val andando = leitura?.avaliacao?.valeProBipe == true
