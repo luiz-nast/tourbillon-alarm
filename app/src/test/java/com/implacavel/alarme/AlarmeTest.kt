@@ -67,6 +67,16 @@ class AlarmeTest {
     }
 
     @Test
+    fun alarmeIlegivelNaoDerrubaALista() {
+        val bom = Alarme(1, 7, 0)
+        var falhas = 0
+        assertEquals(listOf(bom), lerAlarmes("[${bom.paraJson()},{\"id\":2}]") { falhas++ })
+        assertEquals(1, falhas)
+        assertEquals(emptyList<Alarme>(), lerAlarmes("lixo"))
+        assertEquals(emptyList<Alarme>(), lerAlarmes(null))
+    }
+
+    @Test
     fun nomesDaBibliotecaDeSons() {
         assertEquals("Raya.mp3", nomeSeguro("Raya.mp3"))
         assertEquals("a_b_c.mp3", nomeSeguro("a/b\\c.mp3"))
