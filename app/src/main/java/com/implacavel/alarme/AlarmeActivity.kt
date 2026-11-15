@@ -2,7 +2,6 @@ package com.implacavel.alarme
 
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.os.UserManager
 import android.view.KeyEvent
 import android.view.WindowManager
@@ -133,7 +132,6 @@ private fun TelaAlarme(alarme: Alarme) {
     val verificacao by AlarmeService.verificacao.collectAsStateWithLifecycle()
     val conversa by AlarmeService.conversa.collectAsStateWithLifecycle()
     val caminhada by AlarmeService.caminhada.collectAsStateWithLifecycle()
-    val metadeVerificada by AlarmeService.metadeVerificada.collectAsStateWithLifecycle()
     // Os tempos da foto do alarme, não os ajustes de agora: mexer nos ajustes com o alarme tocando não encurta a missão
     val tempos by AlarmeService.temposDoAlarme.collectAsStateWithLifecycle()
     val ondasMudas by AlarmeService.ondasMudas.collectAsStateWithLifecycle()
@@ -188,16 +186,8 @@ private fun TelaAlarme(alarme: Alarme) {
     LaunchedEffect(etapaOlhar) { if (etapaOlhar) youtube.retomar() else youtube.pausar() }
 
     // Num alarme de teste, os botões de fase ("Back", "Cancel test", "Forward") no pé das telas depois do bom dia. O
-    // prazo pra sair anda: a tela já recompõe a cada segundo (por [agora]), e o relógio é relido aqui
-    val fase = if (alarme.deTeste && claro && !saudando && !comemorando) {
-        faseDoTeste(
-            conversa = conversa != null, caminhada = caminhada != null,
-            noPrazo = caminhada?.let { SystemClock.elapsedRealtime() < it.prazoAte } == true,
-            verificacao = verificacao != null, metadeVerificada = metadeVerificada, naCamera = !comCaminhada,
-        )
-    } else {
-        null
-    }
+    // prazo pra sair anda: a tela já recompõe a cada segundo (por [agora]), e [AlarmeService.faseAgora] relê o relógio
+    val fase = if (alarme.deTeste && alarme.missao) AlarmeService.faseAgora() else null
 
     BoxWithConstraints(Modifier.fillMaxSize().background(Brush.verticalGradient(fundo))) {
         val alturaMinima = maxHeight

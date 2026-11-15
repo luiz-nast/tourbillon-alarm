@@ -315,6 +315,14 @@ class AlarmeService : Service() {
          */
         val temposDoAlarme: StateFlow<Tempos> = _temposDoAlarme.asStateFlow()
 
+        /** A fase do teste que a tela do alarme mostra em [agora] ([faseDoTeste]), pelo que o serviço publica; null na música, no bom dia e na comemoração. */
+        fun faseAgora(agora: Long = SystemClock.elapsedRealtime()): FaseDoTeste? =
+            if (!silenciado.value || saudando.value || comemorando.value) null
+            else faseDoTeste(
+                conversa = conversa.value != null, caminhada = caminhada.value != null, noPrazo = caminhada.value?.let { agora < it.prazoAte } == true,
+                verificacao = verificacao.value != null, metadeVerificada = metadeVerificada.value, naCamera = !comCaminhada.value,
+            )
+
         /** Toca o alarme em andamento (ou atualiza o que já toca). */
         fun tocar(ctx: Context) {
             // Falha se o Android não deixa iniciar serviço em segundo plano: o disparo sem alarme exato (Android 12 sem a
@@ -1916,10 +1924,7 @@ class AlarmeService : Service() {
         val alarme = _tocando.value ?: return
         if (!_silenciado.value || _saudando.value || cumprido) return
         val agora = SystemClock.elapsedRealtime()
-        val atual = faseDoTeste(
-            conversa = _conversa.value != null, caminhada = _caminhada.value != null, noPrazo = agora < prazoAte,
-            verificacao = _verificacao.value != null, metadeVerificada = _metadeVerificada.value, naCamera = caminho == CaminhoDaManha.ANTIGO || !comConversaECaminhada(alarme),
-        )
+        val atual = faseAgora(agora)
         if (atual == null || atual == fase || fase !in atual.fases(comFrases = frasesDeHoje.isNotEmpty())) return
         Log.i(TAG, "Teste: de $atual pra $fase pelos botões")
         when (fase) {

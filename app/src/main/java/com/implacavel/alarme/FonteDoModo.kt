@@ -17,17 +17,8 @@ class FonteDoModo : ContentProvider() {
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, args: Array<out String>?, ordem: String?): Cursor {
         // a etapa fingida pelo cabo só vale sem alarme de verdade: a manhã real sempre manda
         val modo = fingido?.takeIf { AlarmeService.tocando.value == null && System.currentTimeMillis() < it.second }?.first
-            ?: modoDaManha(emAtividade = AlarmeService.tocando.value?.missao == true, fase = faseAgora())
+            ?: modoDaManha(emAtividade = AlarmeService.tocando.value?.missao == true, fase = AlarmeService.faseAgora())
         return MatrixCursor(arrayOf("etapa", "valeAte")).apply { addRow(arrayOf<Any>(modo, modoValeAte(modo, System.currentTimeMillis()))) }
-    }
-
-    /** A fase que a tela do alarme mostra (a mesma conta da AlarmeActivity), pelo que o serviço publica; null na música, no bom dia e na comemoração. */
-    private fun faseAgora(): FaseDoTeste? = with(AlarmeService) {
-        if (!silenciado.value || saudando.value || comemorando.value) null
-        else faseDoTeste(
-            conversa = conversa.value != null, caminhada = caminhada.value != null, noPrazo = false,
-            verificacao = verificacao.value != null, metadeVerificada = false, naCamera = !comCaminhada.value,
-        )
     }
 
     companion object {
