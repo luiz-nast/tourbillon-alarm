@@ -36,9 +36,9 @@ prazo; cada app guarda a sua instrução e a leitura do JSON.
 
 | O quê | Valor | Onde |
 |---|---|---|
-| Teto da resposta | 64 tokens (era 120) | `AVULSA_MAX_TOKENS` |
+| Teto da resposta | 64 tokens | `AVULSA_MAX_TOKENS` |
 | Amostragem | `temperature` 0,2, `topK` 20, `topP` 0,9 | `AMOSTRAGEM_AVULSA` |
-| Tempo máximo de geração | o teto: 64 tokens a 17–19 tokens/s na GPU, ~4 s no pior caso (era ~8 s) | `AVULSA_MAX_TOKENS` |
+| Tempo máximo de geração | o teto: 64 tokens a 17–19 tokens/s na GPU, ~4 s no pior caso | `AVULSA_MAX_TOKENS` |
 | Prazo | a chave `"ate"`; vencido = RESPOSTA vazia, sem gerar | `CHAVE_DO_PRAZO`, `semVez` |
 | Cancelamento | nunca `cancelProcess()` (estraga a conversa para sempre, medido): quem desiste deixa o prazo vencer | `semVez` |
 | Alarme na frente | alarme tocando ou em andamento, ou o teste da IA pelo cabo: RESPOSTA vazia na hora | `semVez`, `ServicoDeIa.alarmeNaFrente` |
