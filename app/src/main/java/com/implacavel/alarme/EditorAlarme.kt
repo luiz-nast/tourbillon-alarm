@@ -135,7 +135,7 @@ fun EditorAlarme(
                 if (tipo != TipoDeAlarme.REMEDIO) {
                     Spacer(Modifier.height(8.dp))
                     Text("SOUND", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline, modifier = Modifier.fillMaxWidth())
-                    OpcaoSom("Default: ${padrao ?: "phone alarm ringtone"}", som == null) { som = null }
+                    OpcaoSom("Default: ${rotuloDoPadrao(padrao, sons)}", som == null) { som = null }
                     sons.forEach { s -> OpcaoSom(s.nome, som == s.nome) { som = s.nome } }
                     TextButton(onClick = { adicionarSom.launch(arrayOf("audio/*")) }, modifier = Modifier.fillMaxWidth()) { Text("Add new sound…") }
                 }

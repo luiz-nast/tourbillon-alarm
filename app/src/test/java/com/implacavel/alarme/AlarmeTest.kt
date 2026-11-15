@@ -101,6 +101,14 @@ class AlarmeTest {
     }
 
     @Test
+    fun rotuloDoPadraoAvisaQuandoOArquivoSumiu() {
+        val sons = listOf(Sons.Som("Raya.mp3", java.io.File("Raya.mp3")))
+        assertEquals("phone alarm ringtone", rotuloDoPadrao(null, sons))
+        assertEquals("Raya.mp3", rotuloDoPadrao("Raya.mp3", sons))
+        assertEquals("phone alarm ringtone (Sumiu.mp3 is missing)", rotuloDoPadrao("Sumiu.mp3", sons))
+    }
+
+    @Test
     fun doisBotoesDeTeste() {
         val comum = Alarme.teste()
         val caminhada = Alarme.teste(caminhada = true)

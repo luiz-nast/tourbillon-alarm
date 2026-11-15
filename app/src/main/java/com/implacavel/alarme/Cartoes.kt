@@ -345,6 +345,13 @@ fun SecaoIa(
     }
 }
 
+/** O som padrão pra mostrar: o nome, o toque do celular (sem padrão) ou o aviso de que o arquivo sumiu (o alarme toca o toque do celular). */
+fun rotuloDoPadrao(padrao: String?, sons: List<Sons.Som>): String = when {
+    padrao == null -> "phone alarm ringtone"
+    sons.none { it.nome == padrao } -> "phone alarm ringtone ($padrao is missing)"
+    else -> padrao
+}
+
 /**
  * A biblioteca de sons ([Sons]), recolhida: fechada, o padrão e quantos sons há; aberta, cada som com a bolinha do
  * padrão (o que toca nos alarmes sem som próprio) e "Remove"; "Phone alarm ringtone" é o padrão sem som nenhum. "Add
@@ -357,7 +364,7 @@ fun SecaoSons(sons: List<Sons.Som>, padrao: String?, onAdicionar: () -> Unit, on
         1 -> "1 sound in the app"
         else -> "${sons.size} sounds in the app"
     }
-    SecaoRecolhivel("Sounds", "Default: ${padrao ?: "phone alarm ringtone"} · $quantos", alerta = false) {
+    SecaoRecolhivel("Sounds", "Default: ${rotuloDoPadrao(padrao, sons)} · $quantos", alerta = false) {
         Text(
             "Each alarm picks its sound in the editor; the marked one plays when an alarm has none. Sounds are copied into the app: they keep playing even if the original file is gone.",
             style = MaterialTheme.typography.bodySmall,
