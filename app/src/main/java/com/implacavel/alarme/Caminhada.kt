@@ -23,8 +23,6 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -85,9 +83,7 @@ private const val RELER_PERMISSAO_MS = 1_000L
 
 private val ANEL = 220.dp
 
-private val VerdeAndando = Color(0xFF2E7D32)
 private val VerdeConferindo = Color(0xFF7CB342)
-private val VermelhoParado = Color(0xFFC62828)
 private val CinzaParado = Color(0xFF9E9E9E)
 
 /** A última avaliação do GPS ([avaliacao]), com a [precisao] do fixo (m) e [quando] chegou (SystemClock.elapsedRealtime). */
@@ -376,8 +372,8 @@ fun EtapaCaminhada(
     val leitura = recente(sentidos.leitura, agora)
     val andando = leitura?.avaliacao?.valeProBipe == true
     val (corAlvo, status) = when {
-        !sentidos.permitida -> VermelhoParado to "Location has no permission"
-        !ligada -> VermelhoParado to "Turn on location"
+        !sentidos.permitida -> VermelhoAviso to "Location has no permission"
+        !ligada -> VermelhoAviso to "Turn on location"
         else -> retorno(leitura)
     }
     val cor by animateColorAsState(corAlvo, label = "cor da caminhada")
@@ -417,7 +413,7 @@ fun EtapaCaminhada(
         }
         if (!sentidos.permitida) {
             Spacer(Modifier.height(12.dp))
-            PedirLocalizacao()
+            BotaoGrande("ALLOW LOCATION", pedirPoder(Poder.LOCALIZACAO), fundoClaro = true)
         } else if (!ligada) {
             Spacer(Modifier.height(12.dp))
             BotaoGrande("TURN ON LOCATION", { desbloquear(activity) { abrirLocalizacao(ctx) } }, fundoClaro = true)
@@ -443,10 +439,10 @@ private fun BarraDoBipe(paradoMs: Long) {
     val fracao = (paradoMs.toFloat() / PARADO_MAXIMO_MS).coerceIn(0f, 1f)
     val bipe = bipeDoParado(paradoMs)
     val cor = when {
-        paradoMs == 0L -> VerdeAndando
+        paradoMs == 0L -> VerdeCerto
         bipe == 0 -> AzulCaminhada
-        bipe < BIPES_PARADO_ATE_O_MAXIMO -> lerp(AzulCaminhada, VermelhoParado, bipe.toFloat() / BIPES_PARADO_ATE_O_MAXIMO)
-        else -> VermelhoParado
+        bipe < BIPES_PARADO_ATE_O_MAXIMO -> lerp(AzulCaminhada, VermelhoAviso, bipe.toFloat() / BIPES_PARADO_ATE_O_MAXIMO)
+        else -> VermelhoAviso
     }
     Column(Modifier.fillMaxWidth(0.85f), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -468,7 +464,7 @@ private fun BarraDoBipe(paradoMs: Long) {
                 val altura = 6.dp.toPx() + (size.height - trilho - 6.dp.toPx()) * n / BIPES_PARADO_ATE_O_MAXIMO
                 val aceso = bipe >= n
                 drawLine(
-                    if (aceso) VermelhoParado else AzulCaminhada.copy(alpha = 0.45f), Offset(x, baseY - trilho / 2 - 2.dp.toPx()),
+                    if (aceso) VermelhoAviso else AzulCaminhada.copy(alpha = 0.45f), Offset(x, baseY - trilho / 2 - 2.dp.toPx()),
                     Offset(x, baseY - trilho / 2 - 2.dp.toPx() - altura), if (aceso) 4.dp.toPx() else 2.dp.toPx(), StrokeCap.Round,
                 )
             }
@@ -476,7 +472,7 @@ private fun BarraDoBipe(paradoMs: Long) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("quiet", color = AzulCaminhada.copy(alpha = 0.7f), fontSize = 12.sp)
             Text("beeps from ${PARADO_MS / 1000} s", color = AzulCaminhada.copy(alpha = 0.7f), fontSize = 12.sp)
-            Text("max at ${PARADO_MAXIMO_MS / 1000} s", color = VermelhoParado.copy(alpha = 0.8f), fontSize = 12.sp)
+            Text("max at ${PARADO_MAXIMO_MS / 1000} s", color = VermelhoAviso.copy(alpha = 0.8f), fontSize = 12.sp)
         }
     }
 }
@@ -504,7 +500,7 @@ private fun Trilha(pontos: List<PontoDaTrilha>, modifier: Modifier) {
         )
         for (i in 1 until pontos.size) {
             val cor = when (pontos[i].trecho) {
-                Trecho.CONTOU -> VerdeAndando
+                Trecho.CONTOU -> VerdeCerto
                 Trecho.CONFERINDO -> VerdeConferindo
                 Trecho.NAO -> CinzaParado
             }
@@ -528,10 +524,10 @@ private fun recente(leitura: LeituraGps?, agora: Long): LeituraGps? = leitura?.t
  * e mensagem, com o porquê do jeito que a regra viu ([Avaliacao.motivo]), pra pessoa saber o que fazer.
  */
 private fun retorno(leitura: LeituraGps?): Pair<Color, String> {
-    if (leitura == null) return VermelhoParado to "No GPS signal: go outside, away from buildings"
+    if (leitura == null) return VermelhoAviso to "No GPS signal: go outside, away from buildings"
     val avaliacao = leitura.avaliacao
     return when (avaliacao.movimento) {
-        Movimento.ANDANDO -> VerdeAndando to when (avaliacao.motivo) {
+        Movimento.ANDANDO -> VerdeCerto to when (avaliacao.motivo) {
             "pelos passos" -> "Walking by your steps ✓"
             else -> "Walking ${avaliacao.velocidade?.let(::textoDaVelocidade).orEmpty()} ✓"
         }
@@ -541,13 +537,13 @@ private fun retorno(leitura: LeituraGps?): Pair<Color, String> {
             else -> "Walking… checking"
         }
         Movimento.PARADO -> when (avaliacao.motivo) {
-            "passada longa", "sem passo" -> VermelhoParado to "Only on foot counts"
-            "não saiu do lugar" -> VermelhoParado to "The GPS does not see you moving: go outside"
-            else -> VermelhoParado to "Stopped: walk!"
+            "passada longa", "sem passo" -> VermelhoAviso to "Only on foot counts"
+            "não saiu do lugar" -> VermelhoAviso to "The GPS does not see you moving: go outside"
+            else -> VermelhoAviso to "Stopped: walk!"
         }
-        Movimento.RAPIDO_DEMAIS -> VermelhoParado to "Too fast: only on foot counts"
-        Movimento.IMPRECISO -> VermelhoParado to "Weak GPS${leitura.precisao?.let { " (±${it.roundToInt()} m)" }.orEmpty()}: go outside, away from buildings"
-        Movimento.FALSO -> VermelhoParado to "Fake location does not count"
+        Movimento.RAPIDO_DEMAIS -> VermelhoAviso to "Too fast: only on foot counts"
+        Movimento.IMPRECISO -> VermelhoAviso to "Weak GPS${leitura.precisao?.let { " (±${it.roundToInt()} m)" }.orEmpty()}: go outside, away from buildings"
+        Movimento.FALSO -> VermelhoAviso to "Fake location does not count"
     }
 }
 
@@ -651,24 +647,6 @@ private fun localizacaoFalsa(local: Location): Boolean = if (Build.VERSION.SDK_I
 private fun ouvirGps(gps: LocationManager, ouvinte: LocationListener, satelites: GnssStatus.Callback, principal: Handler) {
     gps.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVALO_GPS_MS, 0f, ouvinte, Looper.getMainLooper())
     gps.registerGnssStatusCallback(satelites, principal)
-}
-
-/**
- * Localização sem permissão: desbloqueia o celular, se preciso, e pede no diálogo do sistema (como a câmera, em
- * PedirCamera). Se o Android não mostrar mais o diálogo (negado de vez), abre as Configurações do app, com um tempo
- * sem a tela do alarme voltar por cima. Os sentidos releem a permissão a cada segundo.
- */
-@Composable
-private fun PedirLocalizacao() {
-    val ctx = LocalContext.current
-    val activity = LocalActivity.current
-    val pedir = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (!Poder.LOCALIZACAO.liberado(ctx)) {
-            AlarmeService.darTempo(ctx)
-            Poder.LOCALIZACAO.abrirConfiguracao(ctx)
-        }
-    }
-    BotaoGrande("ALLOW LOCATION", { desbloquear(activity) { pedir.launch(Poder.LOCALIZACAO.pedido) } }, fundoClaro = true)
 }
 
 /** Abre a localização nas Configurações, numa tarefa separada (como [Poder.abrirConfiguracao]), com um tempo sem a tela do alarme voltar por cima. */

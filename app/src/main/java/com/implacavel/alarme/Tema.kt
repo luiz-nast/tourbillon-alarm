@@ -31,6 +31,10 @@ val VinhoAlarme = Color(0xFF2A0D08)
 val AzulCaminhada = Color(0xFF0D47A1)
 val FundoCaminhada = listOf(Color(0xFFF3F9FF), Color(0xFFBBDEFB))
 
+/** O verde do que está certo (andando, olhando, sua vez) e o vermelho dos avisos, nas etapas da missão. */
+val VerdeCerto = Color(0xFF2E7D32)
+val VermelhoAviso = Color(0xFFC62828)
+
 private val Claro = lightColorScheme(
     primary = Color(0xFF8F2E1D),
     onPrimary = Color.White,

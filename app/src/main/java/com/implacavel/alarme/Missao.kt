@@ -6,7 +6,6 @@
 // ficam em RegrasMissao.kt e RegrasConversa.kt; a vigia (bipes, zerar o anel, música de volta), no AlarmeService.
 package com.implacavel.alarme
 
-import android.Manifest
 import android.app.Activity
 import android.app.KeyguardManager
 import android.util.Log
@@ -219,7 +218,7 @@ fun EtapaVerificacao(passo: Verificacao) {
                 if (depoisDe == -1) append(cursor)
                 ditas.forEachIndexed { i, (palavra, dita) ->
                     if (i > 0) append(" ")
-                    if (dita) withStyle(SpanStyle(color = VerdeVez)) { append(palavra) } else append(palavra)
+                    if (dita) withStyle(SpanStyle(color = VerdeCerto)) { append(palavra) } else append(palavra)
                     if (i == depoisDe) append(cursor)
                 }
                 append("\u201D")
@@ -227,18 +226,11 @@ fun EtapaVerificacao(passo: Verificacao) {
             Text(frase, color = VinhoAlarme, fontSize = 28.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
             Spacer(Modifier.height(8.dp))
             // O que o reconhecedor está ouvindo, em tempo real (as últimas palavras); duas linhas sempre, pra tela não pular
-            Text(
-                if (passo.suaVez && ouvido.isNotBlank()) "Heard: \"${ouvido.split(" ").takeLast(12).joinToString(" ")}\"" else "",
-                color = VinhoAlarme.copy(alpha = 0.7f),
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
-                minLines = 2,
-                maxLines = 2,
-            )
+            Ouvido(if (passo.suaVez) ouvido else "")
             Text("Phrase ${passo.numero} of ${passo.total}", color = VinhoAlarme.copy(alpha = 0.7f), fontSize = 16.sp)
         }
         Spacer(Modifier.height(12.dp))
-        Text(if (passo.suaVez) "🎤 Your turn" else "", color = VerdeVez, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text(if (passo.suaVez) "🎤 Your turn" else "", color = VerdeCerto, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         // Como na câmera: sem resposta há um tempo, quanto falta pra zerar
         val zeraEm = if (passo.suaVez && semResposta >= SILENCIO_APITO_MS) ceil((SILENCIO_ZERA_MS - semResposta) / 1000.0).toInt().coerceAtLeast(0) else null
         Text(zeraEm?.let { "$it s to reset" } ?: "", color = VermelhoAviso, fontSize = 28.sp, fontWeight = FontWeight.Black)
@@ -274,7 +266,7 @@ fun EtapaConversa(conversa: Conversa) {
     val calado = agora - ultimaFala
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(ANEL_CONVERSA), contentAlignment = Alignment.Center) {
-            AnelProgresso((conversa.conversadoMs.toFloat() / conversa.metaMs.coerceAtLeast(1)).coerceIn(0f, 1f), VerdeVez, Modifier.fillMaxSize())
+            AnelProgresso((conversa.conversadoMs.toFloat() / conversa.metaMs.coerceAtLeast(1)).coerceIn(0f, 1f), VerdeCerto, Modifier.fillMaxSize())
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(tempoAndado(conversa.conversadoMs), color = VinhoAlarme, fontSize = 44.sp, fontWeight = FontWeight.Black)
                 Text("of ${tempoAndado(conversa.metaMs)} of talk", color = VinhoAlarme.copy(alpha = 0.7f), fontSize = 15.sp)
@@ -290,14 +282,7 @@ fun EtapaConversa(conversa: Conversa) {
         )
         Spacer(Modifier.height(8.dp))
         // Duas linhas sempre, pra tela não pular: o que o reconhecedor está ouvindo (as últimas palavras)
-        Text(
-            if (ouvido.isNotBlank()) "Heard: \"${ouvido.split(" ").takeLast(12).joinToString(" ")}\"" else "",
-            color = VinhoAlarme.copy(alpha = 0.7f),
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            minLines = 2,
-            maxLines = 2,
-        )
+        Ouvido(ouvido)
         Spacer(Modifier.height(12.dp))
         val vez = when {
             conversa.suaVez && conversa.perguntandoSeContinua -> "🎤 Your turn: yes or no?"
@@ -306,7 +291,7 @@ fun EtapaConversa(conversa: Conversa) {
             conversa.pensando -> "Thinking…"
             else -> ""
         }
-        Text(vez, color = VerdeVez, fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        Text(vez, color = VerdeCerto, fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         // Calado na sua vez: quanto falta pro bipe (na pergunta, pra valer como não); bipando, o jeito de parar
         val faltam = ceil((SILENCIO_CONVERSA_MS - calado) / 1000.0).toInt().coerceAtLeast(0)
         val aviso = when {
@@ -355,7 +340,12 @@ fun EtapaOlhar(
     // Tirar a permissão da câmera não é saída: sem ela, o único caminho é liberar de novo
     var respostas by remember { mutableIntStateOf(0) }
     if (!lidoAoVoltar(respostas) { Poder.CAMERA.liberado(ctx) }) {
-        pagina { PedirCamera(onLiberada = { respostas++ }) }
+        pagina {
+            AvisoComBotao(
+                "The camera has no permission.\nAllow it to turn off the alarm.", "ALLOW CAMERA", fundoClaro = true,
+                onClick = pedirPoder(Poder.CAMERA) { respostas++ },
+            )
+        }
         return
     }
     if (leituraDaCamera.leitura == Leitura.SEM_CAMERA) {
@@ -569,26 +559,37 @@ private fun CameraMovel(
 }
 
 /**
- * Câmera sem permissão: desbloqueia o celular, se preciso, e pede no diálogo do sistema. Se o
- * Android não mostrar mais o diálogo (negado de vez), abre as Configurações, com um tempo sem a tela
- * do alarme voltar por cima (a música continua). A etapa da câmera relê a permissão quando a tela volta
- * e em [onLiberada]: com a permissão já dada (ex.: nas Configurações em tela dividida), não há diálogo nem volta.
+ * O clique que libera [poder] (câmera, localização): desbloqueia o celular, se preciso, e pede no diálogo do sistema.
+ * Se o Android não mostrar mais o diálogo (negado de vez), abre as Configurações, com um tempo sem a tela do alarme
+ * voltar por cima (a música continua). Quem chama relê a permissão (a câmera também em [onLiberada]): com ela já dada
+ * (ex.: nas Configurações em tela dividida), não há diálogo nem volta.
  */
 @Composable
-private fun PedirCamera(onLiberada: () -> Unit) {
+fun pedirPoder(poder: Poder, onLiberada: () -> Unit = {}): () -> Unit {
     val ctx = LocalContext.current
     val activity = LocalActivity.current
-    val pedir = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) {
+    val pedir = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (poder.liberado(ctx)) {
             onLiberada()
         } else {
             AlarmeService.darTempo(ctx)
-            Poder.CAMERA.abrirConfiguracao(ctx)
+            poder.abrirConfiguracao(ctx)
         }
     }
-    AvisoComBotao("The camera has no permission.\nAllow it to turn off the alarm.", "ALLOW CAMERA", fundoClaro = true) {
-        desbloquear(activity) { pedir.launch(Manifest.permission.CAMERA) }
-    }
+    return { desbloquear(activity) { pedir.launch(poder.pedido) } }
+}
+
+/** O que o reconhecedor está ouvindo, em tempo real (as últimas palavras); duas linhas sempre, pra tela não pular. */
+@Composable
+private fun Ouvido(ouvido: String) {
+    Text(
+        if (ouvido.isNotBlank()) "Heard: \"${ouvido.split(" ").takeLast(12).joinToString(" ")}\"" else "",
+        color = VinhoAlarme.copy(alpha = 0.7f),
+        fontSize = 16.sp,
+        textAlign = TextAlign.Center,
+        minLines = 2,
+        maxLines = 2,
+    )
 }
 
 /** Aviso curto com um botão grande embaixo: os pedidos e as saídas das etapas da missão. */
@@ -635,12 +636,9 @@ private fun AnelProgresso(progresso: Float, cor: Color, modifier: Modifier) {
 }
 
 
-private val VermelhoAviso = Color(0xFFC62828)
-private val VerdeVez = Color(0xFF2E7D32)
-
 /** O retorno visual de cada leitura da câmera: cor (verde ou vermelho) e mensagem. */
 private fun retorno(leitura: Leitura): Pair<Color, String> = when (leitura) {
-    Leitura.OLHANDO -> Color(0xFF2E7D32) to "That's it! Keep looking"
+    Leitura.OLHANDO -> VerdeCerto to "That's it! Keep looking"
     Leitura.OLHOS_FECHADOS -> VermelhoAviso to "Open those eyes!"
     Leitura.SEM_ROSTO, Leitura.SEM_CAMERA -> VermelhoAviso to "Where are you? Bring your face closer"
 }
