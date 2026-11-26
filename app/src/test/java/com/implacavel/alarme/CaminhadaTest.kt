@@ -8,6 +8,7 @@ import org.junit.Test
 import java.util.Random
 import java.util.zip.GZIPInputStream
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
@@ -354,6 +355,25 @@ class CaminhadaTest {
         val depois = p.fazer(16, hz = 1.8, v = 1.2, semFixo = { it < 10 })
         assertTrue(depois.all { it.soma <= 3_000 })
         assertTrue(depois.sumOf { it.soma } <= 8_000)
+    }
+
+    /** Andar normal nunca cala o bipe: nenhuma janela de ~1 s das 3 caminhadas gravadas chega ao balanço forte; um balanço firme chega. */
+    @Test
+    fun andarNuncaCalaOBipeEBalancarForteCala() {
+        for (arquivo in listOf("caminhada_10-17.txt.gz", "caminhada_10-17b.txt.gz", "caminhada_10-17c.txt.gz")) {
+            val amostras = GZIPInputStream(javaClass.getResourceAsStream("/$arquivo")!!).bufferedReader().readLines()
+                .filter { it.startsWith("A ") }.flatMap { l -> l.split(" ").drop(2).filter { it.isNotEmpty() }.map { it.toInt() / 10f } }
+            assertTrue(arquivo, amostras.size > 20_000)
+            assertFalse(arquivo, amostras.windowed(AMOSTRAS_DO_BALANCO).any(::balancandoForte))
+        }
+        // 3 vezes por segundo, pra cima e pra baixo: firme (±4 cm) cala, de leve (±2 cm) não
+        fun balanco(amplitude: Double) = List(AMOSTRAS_DO_BALANCO) { abs(9.81 + amplitude * sin(2 * PI * 3 * it / 50.0)).toFloat() }
+        assertTrue(balancandoForte(balanco(15.0)))
+        assertFalse(balancandoForte(balanco(8.0)))
+        assertFalse("menos de ~1 s de amostras não decide", balancandoForte(balanco(30.0).take(AMOSTRAS_DO_BALANCO - 1)))
+        // Só os dois últimos degraus de cada escada: câmera e conversa (6), caminhada (7)
+        assertEquals(listOf(5, 6, 7), (1..7).filter { bipeCalavel(it, BIPES_ATE_ZERAR) })
+        assertEquals(listOf(6, 7), (1..7).filter { bipeCalavel(it, BIPES_PARADO_ATE_O_MAXIMO) })
     }
 
     /**

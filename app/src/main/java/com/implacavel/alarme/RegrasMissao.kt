@@ -4,6 +4,7 @@ package com.implacavel.alarme
 import java.net.URI
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 /** No botão "Testar câmera + frases" a câmera pede só isto (metade fácil, metade exigente): teste tem que ser rápido. */
 const val META_OLHAR_TESTE_MS = 30_000L
@@ -222,6 +223,26 @@ fun segundosParaZerar(semOlharMs: Long): Int? =
  */
 fun volumeDoBipe(n: Int, maximo: Int, degraus: Int = BIPES_ATE_ZERAR): Int =
     (maximo * n.coerceIn(1, degraus).toFloat() / degraus).roundToInt().coerceAtLeast(1)
+
+/** O bipe [n] de [degraus] é um dos dois últimos da escada: só esses o balanço forte cala ([balancandoForte]). */
+fun bipeCalavel(n: Int, degraus: Int): Boolean = n >= degraus - 1
+
+/**
+ * O limiar do balanço forte (m/s²): o desvio-padrão do tamanho da aceleração em [AMOSTRAS_DO_BALANCO] amostras (~1 s).
+ * Andando normal com o celular na mão, nas 3 caminhadas gravadas no S24 FE (10-17), o máximo foi 4,2. 8 é um balanço
+ * firme e sustentado (uns 4 cm pra cima e pra baixo, 3 vezes por segundo), sem precisar esmurrar.
+ */
+const val LIMIAR_DO_BALANCO = 8.0
+
+/** Amostras do acelerômetro na janela do balanço: ~1 s no SENSOR_DELAY_GAME (~50 por segundo no S24 FE). */
+const val AMOSTRAS_DO_BALANCO = 50
+
+/** As últimas [amostras] (o tamanho da aceleração, m/s², com a gravidade) são de um balanço forte? */
+fun balancandoForte(amostras: Collection<Float>): Boolean {
+    if (amostras.size < AMOSTRAS_DO_BALANCO) return false
+    val media = amostras.average()
+    return sqrt(amostras.sumOf { (it - media) * (it - media) } / amostras.size) >= LIMIAR_DO_BALANCO
+}
 
 /** Sites que a página do YouTube abre: o próprio YouTube e o Google (aviso de cookies e login). */
 private val SITES_DA_PAGINA = listOf("youtube.com", "youtu.be", "google.com", "google.com.br")

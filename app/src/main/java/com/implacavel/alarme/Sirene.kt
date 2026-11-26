@@ -1,6 +1,10 @@
 package com.implacavel.alarme
 
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.media.AudioAttributes
 import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
@@ -19,7 +23,16 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 import androidx.core.net.toUri
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
+import kotlin.math.sqrt
+
+private val _balancaPraCalar = MutableStateFlow(false)
+
+/** Os dois últimos degraus do bipe estão tocando: a tela avisa que o balanço forte cala ([Sirene.bipe]). */
+val balancaPraCalar: StateFlow<Boolean> = _balancaPraCalar.asStateFlow()
 
 /**
  * O barulho do alarme: música ou toque em loop, falas e bipes, vibração contínua, e do começo ao fim
@@ -52,6 +65,24 @@ class Sirene(private val ctx: Context) {
     private var tocando = false // entre [tocar] e [calar]: a música tem que estar tocando
     private var quedas = 0 // quantas vezes a música caiu neste toque: um som que cai de novo e de novo passa a vez ao próximo ([tocarSom])
     private var volumeAntesDoBipe: Int? = null // só enquanto um bipe toca no degrau dele
+    private val sensores = ctx.getSystemService(SensorManager::class.java)
+    private val amostras = ArrayDeque<Float>() // o acelerômetro, só nos dois últimos degraus do bipe ([ouvirBalanco])
+    private var balancando = false
+
+    private val ouvinteDoBalanco = object : SensorEventListener {
+        override fun onSensorChanged(e: SensorEvent) {
+            val (x, y, z) = e.values
+            amostras.addLast(sqrt(x * x + y * y + z * z))
+            if (amostras.size > AMOSTRAS_DO_BALANCO) amostras.removeFirst()
+            balancando = balancandoForte(amostras)
+            if (balancando) bipador?.setVolume(0f, 0f) // o bipe que já toca cala na hora
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, precisao: Int) {}
+    }
+
+    /** Sem bipe dos dois últimos degraus por um tempo (a escada zerou: ele olhou, falou ou andou), o aviso e o acelerômetro saem. */
+    private val fimDoBalanco = Runnable { ouvirBalanco(false) }
 
     /** O volume de alarme de agora, pela subida do alarme (30 s no normal, 2 min no remédio; veja [EmAndamento.volumeAgora]). */
     private fun piso() = foto?.volumeAgora(audio.getStreamMaxVolume(AudioManager.STREAM_ALARM), System.currentTimeMillis()) ?: 0
@@ -180,6 +211,21 @@ class Sirene(private val ctx: Context) {
         voltarDoBipe.run()
         vibrador?.cancel()
         vibrador = null
+        ouvirBalanco(false)
+    }
+
+    /** Liga ou desliga o acelerômetro do balanço forte e o aviso dele na tela. */
+    private fun ouvirBalanco(ligado: Boolean) {
+        if (ligado == _balancaPraCalar.value) return
+        _balancaPraCalar.value = ligado
+        if (ligado) {
+            sensores?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sensores.registerListener(ouvinteDoBalanco, it, SensorManager.SENSOR_DELAY_GAME, handler) }
+            return
+        }
+        handler.removeCallbacks(fimDoBalanco)
+        sensores?.unregisterListener(ouvinteDoBalanco)
+        amostras.clear()
+        balancando = false
     }
 
     /** Volume da música, de 0 a 1, relativo ao volume de alarme (a missão abaixa pra ouvir a voz). */
@@ -193,9 +239,17 @@ class Sirene(private val ctx: Context) {
      * [FOLGA_BIPE_MS]), o volume de alarme fica no degrau dele ([volumeDoBipe]), por cima da trava;
      * depois, volta ao de antes. O último, já no volume máximo, só fica mais alto com um som mais forte. No teste, param
      * no degrau [VOLUME_DO_BIPE_DE_TESTE] (2 de 15 no S24 FE), sem o som forte. Devolve quanto o bipe dura (ms), pra
-     * conversa não ouvir o próprio bipe.
+     * conversa não ouvir o próprio bipe. Nos dois últimos degraus ([bipeCalavel]), em todos os modos, o acelerômetro
+     * escuta: enquanto ele balança forte o celular ([balancandoForte]), o bipe não toca; parou, o próximo volta.
      */
     fun bipe(n: Int, degraus: Int = BIPES_ATE_ZERAR, som: Int = if (n >= degraus) R.raw.bipe_final else R.raw.bipe): Long {
+        val calavel = bipeCalavel(n, degraus)
+        ouvirBalanco(calavel)
+        if (calavel) handler.reagendar(fimDoBalanco, AVISO_SEM_OLHAR_MS + FOLGA_DO_BALANCO_MS)
+        if (calavel && balancando) {
+            Log.i(TAG, "Sirene: bipe $n calado pelo balanço")
+            return 0
+        }
         val maximo = audio.getStreamMaxVolume(AudioManager.STREAM_ALARM)
         // No teste (em casa, com família e vizinho ouvindo), os bipes ficam baixinhos ([VOLUME_DO_BIPE_DE_TESTE]) e sem
         // o apito agudo do fim: é só pra quem segura o celular perceber. A 40%, um teste à noite virou um
@@ -459,6 +513,9 @@ class Sirene(private val ctx: Context) {
 
         /** Depois do tempo de uma fala, quanto ainda espera o aviso do fim dela antes de dar por terminada. */
         const val FOLGA_FIM_DA_FALA_MS = 1_000L
+
+        /** Depois do intervalo entre bipes, quanto o aviso do balanço ainda espera o próximo bipe dos dois últimos degraus. */
+        const val FOLGA_DO_BALANCO_MS = 2_000L
 
         /** Depois do som do bipe, quanto o volume ainda fica no degrau dele: folga pro som sair do alto-falante. */
         const val FOLGA_BIPE_MS = 700L

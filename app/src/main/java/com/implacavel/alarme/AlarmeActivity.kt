@@ -272,6 +272,8 @@ private fun PaginaAlarme(
             )
             Text(hora, color = corTexto, fontSize = 72.sp, fontWeight = FontWeight.Bold)
             Text(nome, color = corTexto, fontSize = 22.sp, textAlign = TextAlign.Center)
+            val balanca by balancaPraCalar.collectAsStateWithLifecycle()
+            if (balanca) Text("Shake hard to stop the beep", color = corTexto, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
     }
     // A etapa muda de lugar ao girar sem recomeçar (o microfone e a câmera seguem ligados)
