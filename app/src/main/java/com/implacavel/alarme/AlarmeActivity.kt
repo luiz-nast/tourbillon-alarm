@@ -135,7 +135,6 @@ private fun TelaAlarme(alarme: Alarme) {
     // Os tempos da foto do alarme, não os ajustes de agora: mexer nos ajustes com o alarme tocando não encurta a missão
     val tempos by AlarmeService.temposDoAlarme.collectAsStateWithLifecycle()
     val ondasMudas by AlarmeService.ondasMudas.collectAsStateWithLifecycle()
-    val miniTarefa by AlarmeService.miniTarefa.collectAsStateWithLifecycle()
     val chuvaForte by AlarmeService.chuvaForte.collectAsStateWithLifecycle()
     val metaCamera = metaOlhar(alarme, tempos)
     val comemorando by AlarmeService.comemorando.collectAsStateWithLifecycle()
@@ -224,8 +223,6 @@ private fun TelaAlarme(alarme: Alarme) {
                             ultimoPasso = ultimoPasso,
                             ondasMudas = ondasMudas,
                             onOndas = { AlarmeService.ondas(ctx, ligadas = it) },
-                            miniTarefa = miniTarefa,
-                            onMiniTarefa = { abrir -> AlarmeService.miniTarefa(ctx, abrir) },
                             chuvaForte = chuvaForte,
                             onTrocarCamera = { AlarmeService.trocarParaCamera(ctx) },
                         )

@@ -60,30 +60,6 @@ fun falaDeSair(prazoMs: Long): String {
 /** No lugar de uma fala da IA que manda descansar ou diz que o alarme acabou (respostaSegura). */
 const val FALA_NAO_NEGOCIA = "Not my call, sir. What is the first thing you will do today?"
 
-/**
- * O botão da mini tarefa do prazo pra sair ([ofereceMiniTarefa]) apareceu, no primeiro bipe de parado: a voz avisa,
- * pelo tempo a mais que ela dá ([extraMs], o [preparoExtra]: 5 min; no teste, meio minuto).
- */
-fun falaDoBotaoDaMiniTarefa(extraMs: Long): String =
-    "Fell asleep, sir? Tap the button on the screen for ${tempoAMais(extraMs)}."
-
-/** Na tela da mini tarefa, aberta pelo botão: a voz diz a [frase] pra repetir, pelo tempo a mais ([extraMs]). */
-fun falaDaMiniTarefa(frase: String, extraMs: Long): String =
-    "Fell asleep, sir? Repeat this sentence and you get ${tempoAMais(extraMs)}: $frase"
-
-/** A mini tarefa feita: o prazo extra ([extraMs]) começa. */
-fun falaMaisTempo(extraMs: Long): String =
-    "${tempoAMais(extraMs).replaceFirstChar { it.uppercase() }}, sir. Get dressed and go outside."
-
-/** "five more minutes", "one more minute" ou "half a minute more", falado. */
-private fun tempoAMais(ms: Long): String = when {
-    ms < 60_000L -> "half a minute more"
-    ms < 120_000L -> "one more minute"
-    else -> "${NUMEROS_FALADOS.getOrElse((ms / 60_000).toInt()) { (ms / 60_000).toString() }} more minutes"
-}
-
-private val NUMEROS_FALADOS = listOf("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
-
 /** Enquanto a IA procura na internet o que a pessoa perguntou (a busca leva uns segundos): a voz avisa. */
 const val FALA_PROCURAR = "Good question, sir. Let me check that."
 

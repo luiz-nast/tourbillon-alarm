@@ -448,22 +448,6 @@ class CaminhadaTest {
     }
 
     @Test
-    fun miniTarefaDoPrazoUmaVezSoNoPrimeiroBipe() {
-        assertEquals(5 * 60_000L, preparoExtra(Alarme(1, 7, 0, caminhada = true))) // eram 3 até 10-28
-        assertEquals(30_000L, preparoExtra(Alarme.teste(caminhada = true)))
-        // Só no 1º bipe de parado depois do prazo, se o extra não foi usado e ela não foi retirada
-        assertTrue(ofereceMiniTarefa(bipe = 1, usado = false, retirada = false))
-        assertFalse(ofereceMiniTarefa(bipe = 2, usado = false, retirada = false))
-        assertFalse(ofereceMiniTarefa(bipe = 1, usado = true, retirada = false))
-        assertFalse(ofereceMiniTarefa(bipe = 1, usado = false, retirada = true)) // andou depois do 1º bipe: já acordou
-        // A frase do dia: sempre a mesma no dia, e não é uma das 5 da verificação da câmera
-        val dia = java.time.LocalDate.of(2026, 10, 22)
-        assertEquals(fraseDaMiniTarefa(dia), fraseDaMiniTarefa(dia))
-        assertTrue(fraseDaMiniTarefa(dia) in FRASES_MOTIVACIONAIS)
-        assertFalse(fraseDaMiniTarefa(dia) in frasesDoDia(dia, 10))
-    }
-
-    @Test
     fun caminhadaEPrazoSeguemOsAjustesETeste3Minutos() {
         val alarme = Alarme(1, 7, 0, caminhada = true)
         val teste = Alarme.teste(caminhada = true)

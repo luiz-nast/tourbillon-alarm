@@ -34,38 +34,6 @@ const val CAMINHADA_TESTE_MS = 3 * 60_000L
 const val PRAZO_SAIR_TESTE_MS = 30_000L
 
 /**
- * A mini tarefa do prazo: o dono dorme tão pesado que o prazo inteiro passa sem ele sentir. No primeiro bipe de
- * parado depois do prazo ([PARADO_MS]), aparece um botão, uma vez só; ele abre a tela da frase pra repetir
- * ([fraseDaMiniTarefa]), e com ela aberta nenhum bipe toca, por até [MINI_TAREFA_MAX_MS]. Repetida, o
- * prazo ganha mais isto (com as ondas de novo). O botão tem uma vida só: aberto (repetindo ou não), não volta; e, se
- * ele andou depois daquele bipe, o botão some e não volta: ele já acordou. No teste, [PREPARO_EXTRA_TESTE_MS].
- */
-const val PREPARO_EXTRA_MS = 5 * 60_000L // o dono achou 3 pouco
-
-const val PREPARO_EXTRA_TESTE_MS = 30_000L
-
-/**
- * A tela da mini tarefa fica aberta (sem bipe) no máximo isto: dá pra ouvir a frase e repetir com calma, mas não vira
- * um esconderijo dos bipes. Fechou sem repetir (o tempo, ou o botão de voltar): os bipes voltam de onde estavam.
- */
-const val MINI_TAREFA_MAX_MS = 60_000L
-
-/** O "voltar" da tela da mini tarefa nesse começo dela é o toque que abriu, repetido sem querer: não fecha. */
-const val TOQUE_DUPLO_MS = 1_500L
-
-/** Quanto prazo a mini tarefa do [alarme] dá. */
-fun preparoExtra(alarme: Alarme): Long = if (alarme.deTeste) PREPARO_EXTRA_TESTE_MS else PREPARO_EXTRA_MS
-
-/** A frase da mini tarefa do [dia]: uma das motivacionais, diferente das da verificação da câmera (que são as primeiras do sorteio do dia). */
-fun fraseDaMiniTarefa(dia: java.time.LocalDate): String = frasesDoDia(dia, FRASES_MOTIVACIONAIS.size).last()
-
-/**
- * A mini tarefa aparece agora? Só no primeiro bipe de parado ([bipe] 1) depois do prazo, uma vez por manhã: nem se o
- * prazo extra já foi [usado], nem se ela foi [retirada] (ele andou depois do primeiro bipe).
- */
-fun ofereceMiniTarefa(bipe: Int, usado: Boolean, retirada: Boolean): Boolean = bipe == 1 && !usado && !retirada
-
-/**
  * Depois do prazo pra sair, parado (sem sinal de vida: nem passo, nem velocidade no GPS, [Avaliacao.valeProBipe]) por
  * esse tempo: um bipe fraco ([primeiroBipeParado]); depois, um a cada [ENTRE_BIPES_PARADO_MS], um degrau de volume
  * mais alto, até o máximo no bipe [BIPES_PARADO_ATE_O_MAXIMO] (aos [PARADO_MAXIMO_MS]: 41 s), com o som forte, até
