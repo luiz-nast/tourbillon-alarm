@@ -216,22 +216,29 @@ fun pedidoDepoisDeInterrompida(antes: String, fala: String): String {
 }
 
 /**
- * O caminho da manhã, decidido logo depois do bom dia. Internet ou GPS não mudam o caminho escolhido; na chuva
+ * O caminho da manhã, decidido logo depois do bom dia, e a etapa dele. Internet ou GPS não mudam o caminho escolhido; na chuva
  * forte, a tela da caminhada oferece trocar a rua pela câmera (vira [CAMERA] no meio, ver trocarParaCamera).
  */
 enum class CaminhoDaManha {
     /** A missão da câmera, de 40 min: o alarme tocando é o "câmera + frases" (outro alarme tomou o lugar do teste), ou a chuva forte trocou a caminhada por ela. */
     CAMERA,
 
-    /** A conversa com a IA, depois o prazo pra sair e a caminhada. */
-    CONVERSA_E_CAMINHADA,
+    /** A conversa com a IA; depois dela, a [CAMINHADA]. */
+    CONVERSA,
 
-    /** Sem a IA (sem o modelo, sem memória, o app caiu, ela não abriu a tempo): direto pro prazo pra sair e a caminhada. */
-    SO_CAMINHADA;
+    /** O prazo pra sair e a caminhada: depois da conversa ou, sem a IA (sem o modelo, sem memória, o app caiu, ela não abriu a tempo), direto. */
+    CAMINHADA;
 
     companion object {
-        /** O caminho gravado com este [nome] no [Progresso] (null se não é de nenhum). "ANTIGO" é o nome que a [CAMERA] tinha: uma gravação de antes da troca continua valendo. */
-        fun deNome(nome: String): CaminhoDaManha? = if (nome == "ANTIGO") CAMERA else entries.firstOrNull { it.name == nome }
+        /**
+         * O caminho gravado com este [nome] no [Progresso] (null se não é de nenhum). Gravações de antes continuam valendo:
+         * "ANTIGO" é a [CAMERA], e "CONVERSA_E_CAMINHADA"/"SO_CAMINHADA" vinham com a [etapa] à parte.
+         */
+        fun deNome(nome: String, etapa: String? = null): CaminhoDaManha? = when (nome) {
+            "ANTIGO" -> CAMERA
+            "CONVERSA_E_CAMINHADA", "SO_CAMINHADA" -> if (etapa == "CONVERSA") CONVERSA else CAMINHADA
+            else -> entries.firstOrNull { it.name == nome }
+        }
     }
 }
 

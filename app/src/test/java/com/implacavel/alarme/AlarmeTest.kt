@@ -275,21 +275,25 @@ class AlarmeTest {
     @Test
     fun progressoSobreviveAoAppMorrer() {
         val p = Progresso(
-            desde = 1_000, olhadoMs = 600_000, metadeVerificada = true, caminho = "CONVERSA_E_CAMINHADA", etapa = "CAMINHADA",
+            desde = 1_000, olhadoMs = 600_000, metadeVerificada = true, caminho = "CAMINHADA",
             conversadoMs = 300_000, extras = 1, andadoMs = 95_000, prazoRestanteMs = 12_000,
         )
         assertEquals(p, Progresso.deJson(JSONObject(p.paraJson().toString())))
-        // Do alarme de sempre, antes de a manhã decidir: sem caminho, etapa nem prazo
+        // Do alarme de sempre, antes de a manhã decidir: sem caminho nem prazo
         val simples = Progresso(desde = 2_000, olhadoMs = 30_000)
         assertEquals(simples, Progresso.deJson(JSONObject(simples.paraJson().toString())))
     }
 
     @Test
-    fun progressoGravadoComOCaminhoAntigoVoltaComoCamera() {
-        // A câmera se chamava ANTIGO: um alarme em andamento gravado antes da troca do nome não perde o caminho
-        val gravado = Progresso.deJson(JSONObject(Progresso(desde = 1_000, caminho = "ANTIGO").paraJson().toString()))
-        assertEquals(CaminhoDaManha.CAMERA, gravado.caminho?.let(CaminhoDaManha::deNome))
-        assertEquals(CaminhoDaManha.SO_CAMINHADA, CaminhoDaManha.deNome("SO_CAMINHADA"))
-        assertNull(CaminhoDaManha.deNome("lixo"))
+    fun progressoGravadoAntesVoltaNoCaminhoCerto() {
+        // Gravações de antes: a câmera se chamava ANTIGO, e o caminho da conversa vinha com a etapa à parte
+        fun antigo(json: String) = Progresso.deJson(JSONObject(json)).caminho?.let(CaminhoDaManha::deNome)
+        assertEquals(CaminhoDaManha.CAMERA, antigo("""{"desde":1000,"caminho":"ANTIGO"}"""))
+        assertEquals(CaminhoDaManha.CONVERSA, antigo("""{"desde":1000,"caminho":"CONVERSA_E_CAMINHADA","etapa":"CONVERSA"}"""))
+        assertEquals(CaminhoDaManha.CAMINHADA, antigo("""{"desde":1000,"caminho":"CONVERSA_E_CAMINHADA","etapa":"CAMINHADA"}"""))
+        assertEquals(CaminhoDaManha.CAMINHADA, antigo("""{"desde":1000,"caminho":"SO_CAMINHADA","etapa":"CAMINHADA"}"""))
+        assertEquals(CaminhoDaManha.CAMINHADA, antigo("""{"desde":1000,"caminho":"SO_CAMINHADA"}"""))
+        assertNull(antigo("""{"desde":1000,"caminho":"lixo"}"""))
+        assertNull(antigo("""{"desde":1000}"""))
     }
 }

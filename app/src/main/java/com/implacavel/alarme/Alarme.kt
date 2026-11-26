@@ -212,7 +212,7 @@ data class EmAndamento(val alarme: Alarme, val desde: Long, val musica: String?,
 
 /**
  * Onde a missão do alarme em andamento estava ([desde] diz de qual alarme): o anel da câmera ([olhadoMs]) e se a
- * verificação do meio já foi feita; no "conversa + caminhada", o caminho e a etapa da manhã (pelo nome), o tempo de
+ * verificação do meio já foi feita; no "conversa + caminhada", o caminho da manhã (pelo nome; [CaminhoDaManha.deNome] lê os de antes), o tempo de
  * conversa pura e os extras, o tempo andado, quanto faltava do prazo pra sair ([prazoRestanteMs]; null = ainda não
  * começou). O serviço grava a cada poucos segundos ([Ajustes.progresso]): se o app morrer ou o celular desligar, o alarme volta
  * tocando e, depois do STOP, continua daqui.
@@ -222,7 +222,6 @@ data class Progresso(
     val olhadoMs: Long = 0,
     val metadeVerificada: Boolean = false,
     val caminho: String? = null,
-    val etapa: String? = null,
     val conversadoMs: Long = 0,
     val extras: Int = 0,
     val andadoMs: Long = 0,
@@ -237,7 +236,6 @@ data class Progresso(
         .put("andadoMs", andadoMs)
         .apply {
             caminho?.let { put("caminho", it) }
-            etapa?.let { put("etapa", it) }
             prazoRestanteMs?.let { put("prazoRestanteMs", it) }
         }
 
@@ -246,8 +244,7 @@ data class Progresso(
             desde = o.getLong("desde"),
             olhadoMs = o.optLong("olhadoMs"),
             metadeVerificada = o.optBoolean("metadeVerificada"),
-            caminho = o.optString("caminho").ifEmpty { null },
-            etapa = o.optString("etapa").ifEmpty { null },
+            caminho = o.optString("caminho").ifEmpty { null }?.let { CaminhoDaManha.deNome(it, o.optString("etapa"))?.name },
             conversadoMs = o.optLong("conversadoMs"),
             extras = o.optInt("extras"),
             andadoMs = o.optLong("andadoMs"),

@@ -55,9 +55,6 @@ data class Conversa(
  */
 data class Caminhada(val andadoMs: Long, val metaMs: Long, val prazoAte: Long, val conferindoMs: Long = 0)
 
-/** As etapas do despertador "conversa + caminhada", depois do STOP e do bom dia. */
-private enum class EtapaDaManha { CONVERSA, CAMINHADA }
-
 /** Um pedido pra IA: chama o motor com o [aoResponder] (que recebe a fala ou null). Guardado pra pedir de novo numa falha. */
 private typealias PedidoDaIa = (aoResponder: (String?) -> Unit) -> Unit
 
@@ -342,10 +339,9 @@ class AlarmeService : Service() {
     private var volumeAoFim: Int? = null // o volume de antes do alarme cumprido, devolvido ao fechar
     private val handler = Handler(Looper.getMainLooper())
 
-    // Despertador "conversa + caminhada" ([naConversaECaminhada]). O caminho, a etapa e o progresso ficam quando a música
+    // Despertador "conversa + caminhada" ([naConversaECaminhada]). O caminho (com a etapa) e o progresso ficam quando a música
     // volta, como o anel da câmera; só um alarme novo começa do zero ([esquecerManha])
-    private var caminho: CaminhoDaManha? = null // decidido depois do primeiro bom dia
-    private var etapa: EtapaDaManha? = null
+    private var caminho: CaminhoDaManha? = null // decidido depois do primeiro bom dia; a etapa, dali em diante
     private var motor: ModeloLocal? = null // a IA da conversa, com o histórico
     private var iaBloqueada = false // o app já caiu neste alarme: a IA do celular (que pesa) fica de fora
     private var abertura: String? = null // a primeira fala da IA (null = não veio)
@@ -434,7 +430,6 @@ class AlarmeService : Service() {
             olhadoMs = _olhado.value,
             metadeVerificada = _metadeVerificada.value,
             caminho = caminho?.name,
-            etapa = etapa?.name,
             conversadoMs = conversadoMs,
             extras = extras,
             andadoMs = andado,
@@ -451,11 +446,10 @@ class AlarmeService : Service() {
      * STOP de novo. A conversa com a IA não volta (o modelo pode ter sido o motivo): vai direto pra caminhada.
      */
     private fun retomarProgresso(p: Progresso) {
-        Log.i(TAG, "Serviço: continuando de onde parou (anel ${p.olhadoMs / 1000} s, etapa ${p.etapa}, ${p.conversadoMs / 1000} s de conversa, ${p.andadoMs / 1000} s andados)")
+        Log.i(TAG, "Serviço: continuando de onde parou (anel ${p.olhadoMs / 1000} s, caminho ${p.caminho}, ${p.conversadoMs / 1000} s de conversa, ${p.andadoMs / 1000} s andados)")
         _olhado.value = p.olhadoMs
         _metadeVerificada.value = p.metadeVerificada
         caminho = p.caminho?.let(CaminhoDaManha::deNome)
-        etapa = p.etapa?.let { nome -> EtapaDaManha.entries.firstOrNull { it.name == nome } }
         conversadoMs = p.conversadoMs
         extras = p.extras
         andado = p.andadoMs
@@ -781,7 +775,7 @@ class AlarmeService : Service() {
         // deixa, e com eles a conversa e a caminhada seguem com a tela fechada
         _tocando.value?.let { mostrarNotificacao(it) }
         // Do bom dia ao fim da conversa, o alto-falante não dorme: a fala depois de um silêncio começaria baixinha
-        if (naConversaECaminhada() && etapa != EtapaDaManha.CAMINHADA) sirene.manterAcordado(true)
+        if (naConversaECaminhada() && caminho != CaminhoDaManha.CAMINHADA) sirene.manterAcordado(true)
         handler.postDelayed(comecarAtividade, SAUDACAO_MAX_MS)
         val falar: (File?) -> Unit = { arquivo ->
             if (_saudando.value) sirene.falar(arquivo) { handler.postDelayed(anunciarInicio, PAUSA_DEPOIS_DA_SAUDACAO_MS) }
@@ -1195,18 +1189,15 @@ class AlarmeService : Service() {
         val primeira = abertura
         val escolhido = when {
             !comConversaECaminhada(alarme) -> CaminhoDaManha.CAMERA
-            primeira != null -> CaminhoDaManha.CONVERSA_E_CAMINHADA
-            else -> CaminhoDaManha.SO_CAMINHADA
+            primeira != null -> CaminhoDaManha.CONVERSA
+            else -> CaminhoDaManha.CAMINHADA
         }
         caminho = escolhido
         _comCaminhada.value = naConversaECaminhada()
         Log.i(TAG, "Conversa: caminho da manhã $escolhido")
-        if (escolhido == CaminhoDaManha.CONVERSA_E_CAMINHADA && primeira != null) {
-            etapa = EtapaDaManha.CONVERSA
-            return continuarManha(primeira)
-        }
+        if (escolhido == CaminhoDaManha.CONVERSA) return continuarManha(primeira)
         soltarIa()
-        if (escolhido == CaminhoDaManha.SO_CAMINHADA) return irPraCaminhada()
+        if (escolhido == CaminhoDaManha.CAMINHADA) return irPraCaminhada()
         // A missão de 40 min, com o mesmo prazo se a voz travar (e o alto-falante como no alarme de sempre)
         sirene.manterAcordado(false)
         handler.reagendar(comecarAtividade, SAUDACAO_MAX_MS)
@@ -1216,10 +1207,7 @@ class AlarmeService : Service() {
     /** A etapa da manhã começa, ou volta depois do STOP e do bom dia: a conversa (com a [primeira] fala da IA, ou a IA retomando) ou a caminhada. */
     private fun continuarManha(primeira: String? = null) {
         fimDaSaudacao()
-        when (etapa) {
-            EtapaDaManha.CONVERSA -> abrirConversa(primeira)
-            EtapaDaManha.CAMINHADA, null -> comecarCaminhada()
-        }
+        if (caminho == CaminhoDaManha.CONVERSA) abrirConversa(primeira) else comecarCaminhada()
     }
 
     /** Quanto de conversa a manhã pede agora: a meta do [alarme] (pelos ajustes), mais o tempo extra se a pessoa quis continuar. */
@@ -1547,7 +1535,7 @@ class AlarmeService : Service() {
      * quer continuar (uma vez só); na pergunta, a resposta decide; depois do tempo extra, acaba.
      */
     private val fimDaVez = Runnable {
-        val c = _conversa.value?.takeIf { (it.suaVez || provisoria?.segurada == true) && etapa == EtapaDaManha.CONVERSA } ?: return@Runnable
+        val c = _conversa.value?.takeIf { (it.suaVez || provisoria?.segurada == true) && caminho == CaminhoDaManha.CONVERSA } ?: return@Runnable
         val texto = textoDaVez
         if (fazendoSom || texto.isBlank()) return@Runnable
         _conversa.value = c.copy(suaVez = false, pensando = true)
@@ -1597,7 +1585,7 @@ class AlarmeService : Service() {
      * memória e vem a caminhada ([irPraCaminhada]). As anotações ficam prontas em segundo plano, já na caminhada.
      */
     private fun terminarConversa(motivo: String) {
-        if (etapa != EtapaDaManha.CONVERSA) return
+        if (caminho != CaminhoDaManha.CONVERSA) return
         Log.i(TAG, "Conversa: fim ($motivo), ${conversadoMs / 1000} s de conversa")
         handler.removeCallbacks(tiqueDaConversa)
         handler.removeCallbacks(fimDaVez)
@@ -1628,7 +1616,7 @@ class AlarmeService : Service() {
     private fun irPraCaminhada() {
         val alarme = _tocando.value ?: return
         val rodada = ++rodadaConversa // nada que estava pendente (IA, voz, fala da pessoa) vale mais
-        etapa = EtapaDaManha.CAMINHADA
+        caminho = CaminhoDaManha.CAMINHADA
         voz?.cancelar()
         // O bom dia acabou (sem a IA, a fala de sair vem logo depois dele): a tela mostra a fala no cartão da conversa e
         // pode fechar nesse meio tempo, como na conversa (emSegundoPlano)
@@ -1790,7 +1778,7 @@ class AlarmeService : Service() {
      * de sair já tocando (a conversa acabou; a tela ainda mostra o cartão dela), a caminhada vem já, sem esperar a fala.
      */
     private fun saltarConversa() {
-        if (etapa == EtapaDaManha.CONVERSA) return terminarConversa("avançou no teste")
+        if (caminho == CaminhoDaManha.CONVERSA) return terminarConversa("avançou no teste")
         rodadaConversa++ // o "seguir" da fala de sair não vale mais: a caminhada começa aqui
         _conversa.value = null
         continuarManha()
@@ -1820,7 +1808,7 @@ class AlarmeService : Service() {
         extras = 0
         falhas = 0
         transcricao.clear()
-        etapa = EtapaDaManha.CONVERSA
+        caminho = CaminhoDaManha.CONVERSA
         sirene.manterAcordado(true)
         if (motor != null) return abrirConversa(null)
         _conversa.value = Conversa(falaDaIa = "", suaVez = false, pensando = true, conversadoMs = 0, metaMs = metaDaConversa(alarme))
@@ -1829,14 +1817,14 @@ class AlarmeService : Service() {
         val rodada = rodadaConversa
         var foi = false // a abertura e o prazo dela chegando os dois: só o primeiro vale
         val chegou: (String?) -> Unit = { fala ->
-            if (rodada == rodadaConversa && etapa == EtapaDaManha.CONVERSA && !foi) {
+            if (rodada == rodadaConversa && caminho == CaminhoDaManha.CONVERSA && !foi) {
                 foi = true
                 if (fala == null) terminarConversa("a IA não voltou em ${VOLTA_MAX_MS / 1000} s") else abrirConversa(fala)
             }
         }
         handler.postDelayed({ chegou(null) }, VOLTA_MAX_MS)
         Noticias.buscar { manchetes, metas ->
-            if (rodada != rodadaConversa || etapa != EtapaDaManha.CONVERSA || foi) return@buscar
+            if (rodada != rodadaConversa || caminho != CaminhoDaManha.CONVERSA || foi) return@buscar
             val ia = criarMotor(manchetes, metas) ?: return@buscar chegou(null)
             ia.abrir(chegou)
         }
@@ -1930,7 +1918,6 @@ class AlarmeService : Service() {
         rodadaConversa++
         soltarIa()
         caminho = null
-        etapa = null
         conversadoMs = 0
         extras = 0
         falhas = 0
