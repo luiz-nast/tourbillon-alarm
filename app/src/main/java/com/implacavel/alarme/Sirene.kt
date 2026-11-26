@@ -66,7 +66,8 @@ class Sirene(private val ctx: Context) {
     private var quedas = 0 // quantas vezes a música caiu neste toque: um som que cai de novo e de novo passa a vez ao próximo ([tocarSom])
     private var volumeAntesDoBipe: Int? = null // só enquanto um bipe toca no degrau dele
     private val sensores = ctx.getSystemService(SensorManager::class.java)
-    private val amostras = ArrayDeque<Float>() // o acelerômetro, só nos dois últimos degraus do bipe ([ouvirBalanco])
+    private val amostras = ArrayDeque<Float>() // o acelerômetro, do antepenúltimo degrau do bipe em diante ([ouvirBalanco])
+    private var ouvindo = false
     private var balancando = false
 
     private val ouvinteDoBalanco = object : SensorEventListener {
@@ -75,7 +76,7 @@ class Sirene(private val ctx: Context) {
             amostras.addLast(sqrt(x * x + y * y + z * z))
             if (amostras.size > AMOSTRAS_DO_BALANCO) amostras.removeFirst()
             balancando = balancandoForte(amostras)
-            if (balancando) bipador?.setVolume(0f, 0f) // o bipe que já toca cala na hora
+            if (balancando && _balancaPraCalar.value) bipador?.setVolume(0f, 0f) // o bipe calável que já toca cala na hora
         }
 
         override fun onAccuracyChanged(sensor: Sensor?, precisao: Int) {}
@@ -216,8 +217,9 @@ class Sirene(private val ctx: Context) {
 
     /** Liga ou desliga o acelerômetro do balanço forte e o aviso dele na tela. */
     private fun ouvirBalanco(ligado: Boolean) {
-        if (ligado == _balancaPraCalar.value) return
-        _balancaPraCalar.value = ligado
+        if (!ligado) _balancaPraCalar.value = false
+        if (ligado == ouvindo) return
+        ouvindo = ligado
         if (ligado) {
             sensores?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sensores.registerListener(ouvinteDoBalanco, it, SensorManager.SENSOR_DELAY_GAME, handler) }
             return
@@ -243,9 +245,12 @@ class Sirene(private val ctx: Context) {
      * escuta: enquanto ele balança forte o celular ([balancandoForte]), o bipe não toca; parou, o próximo volta.
      */
     fun bipe(n: Int, degraus: Int = BIPES_ATE_ZERAR, som: Int = if (n >= degraus) R.raw.bipe_final else R.raw.bipe): Long {
+        // O acelerômetro liga um degrau antes: quando o 1º calável chega, já tem o ~1 s de amostras que o balanço pede
+        val ouvir = bipeCalavel(n + 1, degraus)
         val calavel = bipeCalavel(n, degraus)
-        ouvirBalanco(calavel)
-        if (calavel) handler.reagendar(fimDoBalanco, AVISO_SEM_OLHAR_MS + FOLGA_DO_BALANCO_MS)
+        ouvirBalanco(ouvir)
+        _balancaPraCalar.value = calavel
+        if (ouvir) handler.reagendar(fimDoBalanco, AVISO_SEM_OLHAR_MS + FOLGA_DO_BALANCO_MS)
         if (calavel && balancando) {
             Log.i(TAG, "Sirene: bipe $n calado pelo balanço")
             return 0
