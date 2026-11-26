@@ -478,9 +478,7 @@ class AlarmeService : Service() {
                 return
             }
             Log.i(TAG, "Missão: ${DESISTENCIA_MS / 1000} s sem olhar pra câmera, anel zera (estava em ${_olhado.value / 1000} s) e a música volta")
-            zerarAnel()
-            religarMusica()
-            _tocando.value?.let { mostrarNotificacao(it) } // alerta de novo
+            desistir()
         }
     }
 
@@ -798,13 +796,17 @@ class AlarmeService : Service() {
         _saudando.value = false
     }
 
+    /** Ainda no bom dia do "câmera + frases"; no "conversa + caminhada", o fim dele vai pra [saudacaoFeita] (e aqui, false). */
+    private fun saudacaoDaCamera(): Boolean {
+        if (!_saudando.value) return false
+        if (!naConversaECaminhada()) return true
+        saudacaoFeita()
+        return false
+    }
+
     /** "Activity starting now", o bipe positivo e a câmera. No despertador "conversa + caminhada", [saudacaoFeita] no lugar. */
     private val anunciarInicio: Runnable = Runnable {
-        if (!_saudando.value) return@Runnable
-        if (naConversaECaminhada()) {
-            saudacaoFeita()
-            return@Runnable
-        }
+        if (!saudacaoDaCamera()) return@Runnable
         sirene.falar(voz?.fixa(FALA_DO_INICIO)) {
             if (_saudando.value) sirene.positivo { comecarAtividade.run() }
         }
@@ -812,11 +814,7 @@ class AlarmeService : Service() {
 
     /** Fim da saudação: a tela passa pra câmera e a vigia começa a contar. No despertador "conversa + caminhada", [saudacaoFeita] no lugar. */
     private val comecarAtividade: Runnable = Runnable {
-        if (!_saudando.value) return@Runnable
-        if (naConversaECaminhada()) {
-            saudacaoFeita() // a voz travou: o prazo vale como o fim do bom dia
-            return@Runnable
-        }
+        if (!saudacaoDaCamera()) return@Runnable // no "conversa + caminhada", a voz travou: o prazo vale como o fim do bom dia
         Log.i(TAG, "Missão: saudação feita, começa a câmera")
         sirene.manterAcordado(false) // a manhã virou a missão de 40 min antes de decidir (outro alarme juntou no bom dia)
         fimDaSaudacao()
@@ -941,6 +939,13 @@ class AlarmeService : Service() {
         _metadeVerificada.value = false
     }
 
+    /** Sem sinal até o fim (da [vigia] ou do [silencio]): o anel zera, a música volta e a notificação alerta de novo. */
+    private fun desistir() {
+        zerarAnel()
+        religarMusica()
+        _tocando.value?.let { mostrarNotificacao(it) }
+    }
+
     /**
      * Fim do modo fácil da câmera: o anel para (a tela da câmera sai), toca o bipe leve, a voz diz [FALA_VERIFICAR]
      * e, [PAUSA_ANTES_DAS_FRASES_MS] depois, começam as frases. Com zero frases nos ajustes, só o agradecimento e o
@@ -980,10 +985,11 @@ class AlarmeService : Service() {
      */
     private fun ouvirFrase(frase: String, rodada: Int) {
         pararOuvinteDaFrase()
-        ouvinteDaFrase = ouvirRepeticao(
-            "frase", frase,
+        // As falas se juntam: uma pausa no meio da frase não perde as palavras já ditas
+        ouvinteDaFrase = Ouvinte(
+            this, "frase", aceita = { repetiu(frase, it) },
             onOuviu = { ouvido ->
-                if (rodada != rodadaVerificacao) return@ouvirRepeticao
+                if (rodada != rodadaVerificacao) return@Ouvinte
                 _verificacao.value = _verificacao.value?.copy(ouvido = ouvido)
                 if (_verificacao.value?.suaVez == true && SystemClock.elapsedRealtime() - vezComecou < PRAZO_FRASE_MS) esperarResposta()
             },
@@ -996,12 +1002,9 @@ class AlarmeService : Service() {
                     agradecer()
                 }
             },
-        )
+            idioma = "en-US", juntar = true,
+        ).also { it.comecar() }
     }
-
-    /** O ouvinte de quem repete a [frase] em inglês, já começado; as falas se juntam, então uma pausa no meio da frase não perde as palavras já ditas. */
-    private fun ouvirRepeticao(nome: String, frase: String, onOuviu: (String) -> Unit, onAceito: () -> Unit, onIndisponivel: () -> Unit) =
-        Ouvinte(this, nome, aceita = { repetiu(frase, it) }, onOuviu, onAceito, onIndisponivel, idioma = "en-US", juntar = true).also { it.comecar() }
 
     /** A vez da pessoa (ou ela acabou de falar): a contagem sem resposta recomeça do zero. */
     private fun esperarResposta() {
@@ -1021,9 +1024,7 @@ class AlarmeService : Service() {
                 return
             }
             Log.i(TAG, "Missão: ${SILENCIO_ZERA_MS / 1000} s sem responder na verificação, anel zera e a música volta")
-            zerarAnel()
-            religarMusica()
-            _tocando.value?.let { mostrarNotificacao(it) }
+            desistir()
         }
     }
 
@@ -1759,12 +1760,9 @@ class AlarmeService : Service() {
         Log.i(TAG, "Teste: de $atual pra $fase pelos botões")
         when (fase) {
             FaseDaManha.CONVERSA -> voltarPraConversa()
-            FaseDaManha.PREPARO -> {
-                prazoAte = 0L // o prazo começa de novo, inteiro
-                if (atual == FaseDaManha.CONVERSA) saltarConversa() else comecarCaminhada()
-            }
-            FaseDaManha.CAMINHADA -> {
-                prazoAte = agora // prazo já vencido: sem ondas, e os bipes de parado contam daqui
+            FaseDaManha.PREPARO, FaseDaManha.CAMINHADA -> {
+                // PREPARO: o prazo começa de novo, inteiro. CAMINHADA: prazo já vencido, sem ondas, e os bipes de parado contam daqui
+                prazoAte = if (fase == FaseDaManha.PREPARO) 0L else agora
                 if (atual == FaseDaManha.CONVERSA) saltarConversa() else comecarCaminhada()
             }
             FaseDaManha.CAMERA_FACIL -> {
