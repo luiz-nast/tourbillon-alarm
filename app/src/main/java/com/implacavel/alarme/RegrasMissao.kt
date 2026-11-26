@@ -229,7 +229,7 @@ fun bipeCalavel(n: Int, degraus: Int): Boolean = n >= degraus - 1
 
 /**
  * O limiar do balanço forte (m/s²): o desvio-padrão do tamanho da aceleração em [AMOSTRAS_DO_BALANCO] amostras (~1 s).
- * Andando normal com o celular na mão, nas 3 caminhadas gravadas no S24 FE (10-17), o máximo foi 4,2. 8 é um balanço
+ * Nas 3 caminhadas gravadas no S24 FE (10-17), andando normal o máximo foi 4,2 (5,6 contando o pegar e guardar). 8 é um balanço
  * firme e sustentado (uns 4 cm pra cima e pra baixo, 3 vezes por segundo), sem precisar esmurrar.
  */
 const val LIMIAR_DO_BALANCO = 8.0
