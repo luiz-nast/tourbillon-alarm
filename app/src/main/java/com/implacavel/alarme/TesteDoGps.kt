@@ -1,4 +1,4 @@
-// Teste do GPS da caminhada pelo cabo (permissão DUMP, como o TesteDoSom), sem alarme e sem som nenhum:
+// Teste do GPS da caminhada pelo cabo (permissão DUMP, como o TesteDaIa), sem alarme e sem som nenhum:
 //   adb shell am start -n com.implacavel.alarme/.TesteDoGps            (15 min; --ei minutos N pra outro tempo)
 //   adb logcat -s Implacavel
 // Também grava o log num arquivo (dá pra soltar o cabo e andar na rua), lido depois pelo cabo:

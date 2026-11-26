@@ -7,7 +7,6 @@
 package com.implacavel.alarme
 
 import android.annotation.SuppressLint
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.media.AudioFormat
@@ -47,8 +46,6 @@ class Escuta(
     private val onSom: (comecou: Boolean, db: Float) -> Unit,
     private val onTexto: (String) -> Unit,
     private val onIndisponivel: () -> Unit,
-    private val servico: ComponentName? = null, // qual reconhecedor do celular; null = o padrão do sistema
-    private val idioma: String = "en-US",
     private val palavras: List<String> = emptyList(), // as dele ([Ajustes.palavras]): o reconhecedor tende a elas
 ) {
     private var hipotesesDaFrase: List<String> = emptyList() // as outras hipóteses da última frase terminada
@@ -218,11 +215,11 @@ class Escuta(
         leitura = lado
         cano = ParcelFileDescriptor.AutoCloseOutputStream(ponta)
         val esta = sessao
-        val r = (if (servico != null) SpeechRecognizer.createSpeechRecognizer(ctx, servico) else SpeechRecognizer.createSpeechRecognizer(ctx)).also { reconhecedor = it }
+        val r = SpeechRecognizer.createSpeechRecognizer(ctx).also { reconhecedor = it }
         r.setRecognitionListener(Ouvido { esta == sessao && ativa })
         val pedido = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, idioma)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
             .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
             .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5) // as outras hipóteses vão pra IA ([alternativas])

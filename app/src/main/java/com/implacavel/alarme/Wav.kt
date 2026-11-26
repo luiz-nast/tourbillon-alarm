@@ -1,5 +1,4 @@
-// Arquivos de som WAV (PCM de 16 bits): ler as amostras de uma fala gravada, tocar uma fala pelo AudioTrack e gravar
-// amostras num arquivo (o teste do alto-falante).
+// Arquivos de som WAV (PCM de 16 bits): ler as amostras de uma fala gravada e tocar uma fala pelo AudioTrack.
 package com.implacavel.alarme
 
 import android.media.AudioAttributes
@@ -65,15 +64,4 @@ fun faixaDaFala(wav: File, atributos: AudioAttributes): Pair<AudioTrack, Int>? {
         return null
     }
     return faixa to amostras.size
-}
-
-/** Grava [amostras] (mono) num WAV PCM de 16 bits. */
-fun gravarWav(arquivo: File, amostras: ShortArray, taxa: Int) {
-    val dados = amostras.size * 2
-    val b = ByteBuffer.allocate(44 + dados).order(ByteOrder.LITTLE_ENDIAN)
-    b.put("RIFF".toByteArray()).putInt(36 + dados).put("WAVE".toByteArray())
-    b.put("fmt ".toByteArray()).putInt(16).putShort(1).putShort(1).putInt(taxa).putInt(taxa * 2).putShort(2).putShort(16)
-    b.put("data".toByteArray()).putInt(dados)
-    amostras.forEach { b.putShort(it) }
-    arquivo.writeBytes(b.array())
 }
