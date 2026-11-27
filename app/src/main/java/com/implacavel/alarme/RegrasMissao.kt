@@ -237,12 +237,15 @@ const val LIMIAR_DO_BALANCO = 8.0
 /** Amostras do acelerômetro na janela do balanço: ~1 s no SENSOR_DELAY_GAME (~50 por segundo no S24 FE). */
 const val AMOSTRAS_DO_BALANCO = 50
 
-/** As últimas [amostras] (o tamanho da aceleração, m/s², com a gravidade) são de um balanço forte? */
-fun balancandoForte(amostras: Collection<Float>): Boolean {
-    if (amostras.size < AMOSTRAS_DO_BALANCO) return false
+/** A força do balanço nas últimas [amostras] (o tamanho da aceleração, m/s², com a gravidade): 1 = [LIMIAR_DO_BALANCO]; 0 sem ~1 s de amostras. */
+fun forcaDoBalanco(amostras: Collection<Float>): Float {
+    if (amostras.size < AMOSTRAS_DO_BALANCO) return 0f
     val media = amostras.average()
-    return sqrt(amostras.sumOf { (it - media) * (it - media) } / amostras.size) >= LIMIAR_DO_BALANCO
+    return (sqrt(amostras.sumOf { (it - media) * (it - media) } / amostras.size) / LIMIAR_DO_BALANCO).toFloat()
 }
+
+/** As últimas [amostras] são de um balanço forte, o que cala o bipe? */
+fun balancandoForte(amostras: Collection<Float>): Boolean = forcaDoBalanco(amostras) >= 1f
 
 /** Sites que a página do YouTube abre: o próprio YouTube e o Google (aviso de cookies e login). */
 private val SITES_DA_PAGINA = listOf("youtube.com", "youtu.be", "google.com", "google.com.br")

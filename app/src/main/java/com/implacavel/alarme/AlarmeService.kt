@@ -1004,6 +1004,7 @@ class AlarmeService : Service() {
     private fun esperarResposta() {
         _ultimaResposta.value = SystemClock.elapsedRealtime()
         apitos = 0
+        sirene.escadaZerou()
         handler.reagendar(silencio, SILENCIO_APITO_MS)
     }
 
@@ -1054,6 +1055,7 @@ class AlarmeService : Service() {
     private fun adiarVigia() {
         _ultimoOlhar.value = SystemClock.elapsedRealtime()
         bipes = 0
+        sirene.escadaZerou()
         handler.reagendar(vigia, AVISO_SEM_OLHAR_MS)
     }
 
@@ -1444,6 +1446,7 @@ class AlarmeService : Service() {
         val agora = SystemClock.elapsedRealtime()
         vezDaConversa = agora
         bipesDaConversa = 0
+        sirene.escadaZerou()
         textoDaVez = ""
         provisoria = null
         if (Build.VERSION.SDK_INT >= 33) escuta?.novaVez()
@@ -1499,11 +1502,12 @@ class AlarmeService : Service() {
 
     /** A pessoa está falando (ou fez algum som): o relógio anda e o silêncio (e os bipes) recomeça. */
     private fun vozDaPessoa() {
-        if (_conversa.value?.suaVez != true) return
+        if (_conversa.value?.suaVez != true || sirene.balancando) return // o barulho do balanço não é fala: a conversa não anda
         val agora = SystemClock.elapsedRealtime()
         ouvidoEm = agora
         _ultimaFala.value = agora
         bipesDaConversa = 0
+        sirene.escadaZerou()
         handler.removeCallbacks(fimDaVez)
     }
 
@@ -1857,7 +1861,7 @@ class AlarmeService : Service() {
         if (_caminhada.value == null || !_silenciado.value || _saudando.value || cumprido) return
         andado = maxOf(andado, andadoMs)
         _caminhada.value = _caminhada.value?.copy(andadoMs = andado) // a tela recriada no meio continua daqui
-        adiarVigiaDaCaminhada()
+        if (!sirene.balancando) adiarVigiaDaCaminhada() // o celular sacudido pode parecer passo: não é sinal de vida
     }
 
     /** O 1º bipe de parado fica pra [PARADO_MS] depois de agora ou do fim do prazo pra sair ([primeiroBipeParado]): no prazo, nenhum. */
@@ -1865,6 +1869,7 @@ class AlarmeService : Service() {
         val agora = SystemClock.elapsedRealtime()
         _ultimoPasso.value = agora
         bipesParado = 0
+        sirene.escadaZerou()
         handler.reagendar(vigiaDaCaminhada, primeiroBipeParado(agora, prazoAte) - agora)
     }
 

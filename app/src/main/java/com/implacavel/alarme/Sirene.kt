@@ -27,12 +27,25 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
+import kotlin.math.PI
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 private val _balancaPraCalar = MutableStateFlow(false)
 
 /** Os dois últimos degraus do bipe estão tocando: a tela avisa que o balanço forte cala ([Sirene.bipe]). */
 val balancaPraCalar: StateFlow<Boolean> = _balancaPraCalar.asStateFlow()
+
+private val _forcaDoBalanco = MutableStateFlow(0f)
+
+/** A força do balanço de agora ([forcaDoBalanco]: 1 ou mais cala o bipe), pro indicador da tela. */
+val forcaDoBalancoAgora: StateFlow<Float> = _forcaDoBalanco.asStateFlow()
+
+/** Só pelo cabo ([BalancoPeloCabo]): um balanço de mentira, desta amplitude (m/s²), somado ao acelerômetro de verdade. */
+@Volatile var balancoDeTeste = 0f
+
+/** Só pelo cabo ([BalancoPeloCabo]): o teste toca sem som e sem vibrar. Volta sozinho no fim do alarme ([Sirene.desligar]). */
+@Volatile var mudoPeloCabo = false
 
 /**
  * O barulho do alarme: música ou toque em loop, falas e bipes, vibração contínua, e do começo ao fim
@@ -68,14 +81,16 @@ class Sirene(private val ctx: Context) {
     private val sensores = ctx.getSystemService(SensorManager::class.java)
     private val amostras = ArrayDeque<Float>() // o acelerômetro, do antepenúltimo degrau do bipe em diante ([ouvirBalanco])
     private var ouvindo = false
-    private var balancando = false
+    var balancando = false // agora, balançando forte: o bipe cala, e o som e os passos não valem como atividade
+        private set
 
     private val ouvinteDoBalanco = object : SensorEventListener {
         override fun onSensorChanged(e: SensorEvent) {
             val (x, y, z) = e.values
-            amostras.addLast(sqrt(x * x + y * y + z * z))
+            amostras.addLast(sqrt(x * x + y * y + z * z) + balancoDeTeste * sin(e.timestamp * 6 * PI / 1e9).toFloat())
             if (amostras.size > AMOSTRAS_DO_BALANCO) amostras.removeFirst()
-            balancando = balancandoForte(amostras)
+            _forcaDoBalanco.value = forcaDoBalanco(amostras)
+            balancando = _forcaDoBalanco.value >= 1f
             if (balancando && _balancaPraCalar.value) bipador?.setVolume(0f, 0f) // o bipe calável que já toca cala na hora
         }
 
@@ -189,7 +204,7 @@ class Sirene(private val ctx: Context) {
         }
         player = null
         tocarSom()
-        player?.setVolume(fator, fator)
+        player?.setVolume(fator * som(), fator * som())
     }
 
     /** Cala som e vibração (um bipe no meio devolve o volume). O volume continua travado, e as outras mídias, pausadas. */
@@ -228,12 +243,19 @@ class Sirene(private val ctx: Context) {
         sensores?.unregisterListener(ouvinteDoBalanco)
         amostras.clear()
         balancando = false
+        _forcaDoBalanco.value = 0f
     }
+
+    /** A escada do bipe zerou (ele olhou, falou ou andou): o aviso do balanço sai na hora. */
+    fun escadaZerou() = ouvirBalanco(false)
+
+    /** 0 no teste mudo pelo cabo ([mudoPeloCabo]); senão 1. */
+    private fun som() = if (mudoPeloCabo) 0f else 1f
 
     /** Volume da música, de 0 a 1, relativo ao volume de alarme (a missão abaixa pra ouvir a voz). */
     fun volume(fator: Float) {
         this.fator = fator
-        player?.setVolume(fator, fator)
+        player?.setVolume(fator * som(), fator * som())
     }
 
     /**
@@ -250,7 +272,7 @@ class Sirene(private val ctx: Context) {
         val calavel = bipeCalavel(n, degraus)
         ouvirBalanco(ouvir)
         _balancaPraCalar.value = calavel
-        if (ouvir) handler.reagendar(fimDoBalanco, AVISO_SEM_OLHAR_MS + FOLGA_DO_BALANCO_MS)
+        if (ouvir) handler.reagendar(fimDoBalanco, SILENCIO_APITO_MS + FOLGA_DO_BALANCO_MS)
         if (calavel && balancando) {
             Log.i(TAG, "Sirene: bipe $n calado pelo balanço")
             return 0
@@ -288,7 +310,7 @@ class Sirene(private val ctx: Context) {
             return tocarUmaVez(Uri.fromFile(arquivo), volume, aoTerminar, ganhoDaVoz())
         }
         noAltoFalante(f)
-        f.setVolume(ganhoDaVoz())
+        f.setVolume(ganhoDaVoz() * som())
         val fim = Runnable {
             if (faixa !== f) return@Runnable
             pararFala()
@@ -381,7 +403,7 @@ class Sirene(private val ctx: Context) {
         volumeDoFalante = volume
         runCatching { audio.setStreamVolume(AudioManager.STREAM_ALARM, volume, 0) }
         falante = tocarArquivo(uri, emLoop = false)?.apply {
-            setVolume(ganho, ganho)
+            setVolume(ganho * som(), ganho * som())
             setOnCompletionListener {
                 it.release()
                 if (falante === it) falante = null
@@ -425,6 +447,7 @@ class Sirene(private val ctx: Context) {
 
     /** Fim: cala, solta a trava e as outras mídias e, com [volumeAntes], devolve o volume de alarme de antes. */
     fun desligar(volumeAntes: Int? = null) {
+        mudoPeloCabo = false // o mudo de um teste nunca chega ao alarme de verdade
         handler.removeCallbacks(travarVolume)
         calar()
         manterAcordado(false)
@@ -470,6 +493,7 @@ class Sirene(private val ctx: Context) {
             mp.setDataSource(ctx, uri)
             if (Build.VERSION.SDK_INT >= 28) noAltoFalante(mp) // só depois do setDataSource: antes dele o MediaPlayer ignora a saída escolhida
             mp.isLooping = emLoop
+            mp.setVolume(som(), som())
             mp.prepare()
             mp.start()
             mp
@@ -491,6 +515,7 @@ class Sirene(private val ctx: Context) {
 
     @Suppress("DEPRECATION") // as APIs antigas só são usadas nas versões do Android que não têm as novas
     private fun vibrar() {
+        if (mudoPeloCabo) return
         val v = if (Build.VERSION.SDK_INT >= 31) {
             ctx.getSystemService(VibratorManager::class.java).defaultVibrator
         } else {
@@ -519,7 +544,7 @@ class Sirene(private val ctx: Context) {
         /** Depois do tempo de uma fala, quanto ainda espera o aviso do fim dela antes de dar por terminada. */
         const val FOLGA_FIM_DA_FALA_MS = 1_000L
 
-        /** Depois do intervalo entre bipes, quanto o aviso do balanço ainda espera o próximo bipe dos dois últimos degraus. */
+        /** Depois do maior intervalo entre bipes (o dos apitos das frases), quanto o acelerômetro ainda espera o próximo bipe dos dois últimos degraus. */
         const val FOLGA_DO_BALANCO_MS = 2_000L
 
         /** Depois do som do bipe, quanto o volume ainda fica no degrau dele: folga pro som sair do alto-falante. */

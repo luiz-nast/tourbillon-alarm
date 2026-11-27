@@ -239,8 +239,49 @@ private fun TelaAlarme(alarme: Alarme) {
                 leituraDaCamera = leituraDaCamera,
             )
         }
+        // Os dois últimos degraus do bipe: a tela inteira vira o balanço, por cima da etapa (que segue no serviço)
+        val balanca by balancaPraCalar.collectAsStateWithLifecycle()
+        if (balanca) TelaDoBalanco()
     }
 }
+
+/**
+ * O balanço que cala o bipe, ao vivo, legível com a tela sacudindo: a cor da tela inteira e uma barra grande da força
+ * ([forcaDoBalancoAgora], a mesma conta que cala o som). Âmbar, pedindo; vermelho, pouco (o bipe segue); verde, o bastante
+ * (o bipe cala). Sempre diz que balançar não é a missão: ela só anda pela câmera, pela conversa ou pela caminhada.
+ */
+@Composable
+private fun TelaDoBalanco() {
+    val forca by forcaDoBalancoAgora.collectAsStateWithLifecycle()
+    val calou = forca >= 1f
+    val (fundo, titulo) = when {
+        calou -> VerdeCerto to "🔇 SILENCED"
+        forca >= POUCO_BALANCO -> VermelhoAviso to "HARDER!"
+        else -> Color(0xFFFFA000) to "SHAKE THE PHONE HARD"
+    }
+    val letra = if (fundo == VerdeCerto || fundo == VermelhoAviso) Color.White else VinhoAlarme // no âmbar, o branco some
+    val balanco by rememberInfiniteTransition(label = "balanço").animateFloat(
+        -20f, 20f, infiniteRepeatable(tween(180), RepeatMode.Reverse), label = "celular balançando",
+    )
+    Column(
+        Modifier.fillMaxSize().background(fundo).safeDrawingPadding().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        Text("📳", fontSize = 96.sp, modifier = Modifier.graphicsLayer { rotationZ = if (calou) 0f else balanco })
+        Text(titulo, color = letra, fontSize = 40.sp, lineHeight = 46.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
+        Box(Modifier.fillMaxWidth().height(64.dp).background(letra.copy(alpha = 0.3f), RoundedCornerShape(32.dp))) {
+            if (forca >= 0.05f) Box(Modifier.fillMaxWidth(forca.coerceIn(0f, 1f)).fillMaxHeight().background(letra, RoundedCornerShape(32.dp)))
+        }
+        Text(
+            if (calou) "Beep silenced while you shake.\nThe mission does not advance." else "Shaking only silences the beep.\nThe mission does not advance.",
+            color = letra, fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** Da força do balanço daqui ([forcaDoBalanco]) até 1, a tela diz "pouco"; abaixo, ele ainda nem começou. */
+private const val POUCO_BALANCO = 0.2f
 
 /**
  * Moldura das telas do alarme: ícone pulsando, hora, nome, [conteudo] (a etapa) e, nos testes, o [rodape] (os botões de
@@ -272,8 +313,6 @@ private fun PaginaAlarme(
             )
             Text(hora, color = corTexto, fontSize = 72.sp, fontWeight = FontWeight.Bold)
             Text(nome, color = corTexto, fontSize = 22.sp, textAlign = TextAlign.Center)
-            val balanca by balancaPraCalar.collectAsStateWithLifecycle()
-            if (balanca) Text("Shake hard to stop the beep", color = corTexto, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
     }
     // A etapa muda de lugar ao girar sem recomeçar (o microfone e a câmera seguem ligados)

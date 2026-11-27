@@ -369,6 +369,9 @@ class CaminhadaTest {
         // 3 vezes por segundo, pra cima e pra baixo: firme (±4 cm) cala, de leve (±2 cm) não
         fun balanco(amplitude: Double) = List(AMOSTRAS_DO_BALANCO) { abs(9.81 + amplitude * sin(2 * PI * 3 * it / 50.0)).toFloat() }
         assertTrue(balancandoForte(balanco(15.0)))
+        // A barra da tela e o som usam a mesma conta: força 1 é o limiar que cala
+        for (a in listOf(0.0, 8.0, 14.0, 15.0, 30.0)) assertEquals(forcaDoBalanco(balanco(a)) >= 1f, balancandoForte(balanco(a)))
+        assertEquals(0f, forcaDoBalanco(balanco(30.0).take(AMOSTRAS_DO_BALANCO - 1)))
         assertFalse(balancandoForte(balanco(8.0)))
         assertFalse("menos de ~1 s de amostras não decide", balancandoForte(balanco(30.0).take(AMOSTRAS_DO_BALANCO - 1)))
         // Só os dois últimos degraus de cada escada: câmera e conversa (6), caminhada (7)

@@ -141,6 +141,12 @@
             android:exported="true"
             android:permission="android.permission.DUMP" />
 
+        <!-- Um balanço de mentira, só pelo cabo: a tela do balanço sem sacudir o celular. Veja BalancoPeloCabo.kt -->
+        <receiver
+            android:name=".BalancoPeloCabo"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
+
         <receiver
             android:name=".AlarmeReceiver"
             android:directBootAware="true"
